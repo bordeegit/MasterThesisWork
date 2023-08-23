@@ -3,7 +3,7 @@
 % fagiano@control.ee.ethz.ch
 
 clear 
-close all
+%close all
 clc
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -51,10 +51,18 @@ Line_diameter=0.003;                            % Tether diam.
 Line_density=970;                               % Tether density (kg/m^3)
 n_line=3;                                       % n. of lines
 
+%%%%% Wind Parameters %%%%%
 hr=32.5;                                        % Wind shear model
 phi_wr = 30*pi/180;
-h0=6e-4;                                        % surface roughness
-wr=1;
+%phi_wr = 150*pi/180;
+h0=6e-4; %BASE                                 % surface roughness
+%h0 = 2;
+%In Sheat Wind Estimation paper we get h0 =
+%   0.15 for Category C flight phases(terminal flight phases, which 
+%                                     include takeoff, approach,and
+%                                     landing)
+%   2.0 otherwise
+wr=4;
 
 
 K_r= 1000;                                      % reeling control gain
