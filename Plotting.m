@@ -19,6 +19,9 @@ xlabel('time (s)'), ylabel('Angle of attack (deg)')
 % 3D path
 figure(5),plot3(Position.signals.values(:,1),Position.signals.values(:,2),Position.signals.values(:,3),'k'),grid on,hold on
 plot3(0,0,0,'k*')
+plot3([0, Position.signals.values(end,1)],...
+      [0, Position.signals.values(end,2)],...
+      [0, Position.signals.values(end,3)], 'b-o')
 xlabel('X (m)'), ylabel('Y (m)'), zlabel('Z (m)')
 WindPlot
 
@@ -33,13 +36,13 @@ xlabel('time (s)'), ylabel('r (m)')
 % Wind
 figure(8)
 subplot(3,1,1)
-plot(W_log.time, W_log.signals.values(:,1),'k'), grid on, hold on
+plot(W_log.time, W_log.signals.values(:,1),'k'), grid on
 xlabel('time (s)'), ylabel('Wind X (m/s)')
 subplot(3,1,2)
-plot(W_log.time, W_log.signals.values(:,2),'k'), grid on, hold on
+plot(W_log.time, W_log.signals.values(:,2),'k'), grid on
 xlabel('time (s)'), ylabel('Wind Y (m/s)')
 subplot(3,1,3)
-plot(W_log.time, W_log.signals.values(:,3),'k'), grid on, hold on
+plot(W_log.time, W_log.signals.values(:,3),'k'), grid on
 xlabel('time (s)'), ylabel('Wind Z (m/s)')
 
 
