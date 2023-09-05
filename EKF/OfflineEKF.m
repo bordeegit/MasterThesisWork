@@ -51,8 +51,8 @@ xhatV = zeros(N, n);                % Logging estimate
 for ind=1:N
   y = [Position.signals.values(ind,:)'          % r_meas
        PositionDot.signals.values(ind,:)'       % rdot_meas
-       wr                                       % wr
-       phi_wr                                   % phi_wr
+       wr + (-0.5 + rand)                       % wr with noise
+       phi_wr + (-0.1 +(0.2*rand))              % phi_wr with noise
        Forces.signals.values(ind,end)];         % F_T
   [x, P] = StepEKF(f,x,P,h,y,Q,R, diffStepSize);% ekf
   xhatV(ind,:)= x;                              % Save Estimate
