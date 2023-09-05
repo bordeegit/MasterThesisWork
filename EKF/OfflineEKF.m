@@ -27,18 +27,17 @@ x = [Position.signals.values(1,:)'        % r
       PositionDot.signals.values(1,:)'     % rdot
       [0,0,0]'                             % rdotdot 
       1                                    % Lagrange Multiplier
-      [3,3]'                               % W_n (TODO)
-      Forces.signals.values(1,1:3)'];      % F_tot (Maybe wrong ref sys?)
+      [10,10]'                               % W_n (TODO)
+      Forces.signals.values(1,1:3)'+Forces.signals.values(1,4)']; % F_LDg (Maybe wrong ref sys?)
 
 % Measurements (get index at every loop)
 % NOTE: since we don't compute F_L directly, we cannot use delta (for now)
-ind = 1;
-y = [Position.signals.values(ind,:)'       % r_meas
-     PositionDot.signals.values(ind,:)'    % rdot_meas
-     wr                                    % wr
-     phi_wr                                % phi_wr
-     Forces.signals.values(ind,end)];      % cable traction force F_T
-     %delta(ind,1)];                        % delta, forcing perp., always 0
+% y = [Position.signals.values(ind,:)'       % r_meas
+%      PositionDot.signals.values(ind,:)'    % rdot_meas
+%      wr                                    % wr
+%      phi_wr                                % phi_wr
+%      Forces.signals.values(ind,end)];      % cable traction force F_T
+%      %delta(ind,1)];                        % delta, forcing perp., always 0
 
 f = @(x)StateEquations(x, Ts_10ms, mass);   % State Equations
 h = @(x)MeasurementEquations(x, hr, h0);           % Measurement Equations
