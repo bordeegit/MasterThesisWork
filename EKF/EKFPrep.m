@@ -36,6 +36,6 @@ end
 %% Others 
 
 
-delta = zeros(12001,1);             % Delta
+% delta = zeros(12001,1);             % Delta
 
 
