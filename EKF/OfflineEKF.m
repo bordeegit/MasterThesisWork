@@ -27,7 +27,7 @@ x = [Position.signals.values(1,:)'        % r
       PositionDot.signals.values(1,:)'     % rdot
       [0,0,0]'                             % rdotdot 
       1                                    % Lagrange Multiplier
-      [1,1]'                               % W_n (TODO)
+      [3,3]'                               % W_n (TODO)
       Forces.signals.values(1,1:3)'];      % F_tot (Maybe wrong ref sys?)
 
 % Measurements (get index at every loop)
@@ -47,7 +47,7 @@ n = size(x,1);                              % Number of States
 P = eye(n);                       % State Covariance
 N = 12001;                                 % Number of Steps
 
-xhatV = zeros(n, N);                % Logging estimate  
+xhatV = zeros(N, n);                % Logging estimate  
 
 for ind=1:N
   y = [Position.signals.values(ind,:)'          % r_meas
@@ -56,6 +56,6 @@ for ind=1:N
        phi_wr                                   % phi_wr
        Forces.signals.values(ind,end)];         % F_T
   [x, P] = StepEKF(f,x,P,h,y,Q,R, diffStepSize);% ekf
-  xhatV(:,ind)= x;                              % Save Estimate
+  xhatV(ind,:)= x;                              % Save Estimate
 end
 
