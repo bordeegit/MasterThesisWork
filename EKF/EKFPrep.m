@@ -32,3 +32,10 @@ subplot(3,1,3)
 plot(PositionDot.time, PositionDot.signals.values(:,3),'k'), grid on
 xlabel('time (s)'), ylabel('Kite Vel Z (m/s)')
 end
+
+%% Others 
+
+
+delta = zeros(12001,1);             % Delta
+
+
