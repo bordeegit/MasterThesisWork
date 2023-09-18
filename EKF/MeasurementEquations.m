@@ -1,6 +1,8 @@
 function [y] = MeasurementEquations(x, hr, h0)
 %MEASUREMENTEQUATIONS 
 %   Function to compute the measurement vector y
+% Maybe r and rdot need to be computed with theta and phi, How can i pass
+% them at each time step? the function cannot see the Workspace
 
     y = zeros(9,1);
 

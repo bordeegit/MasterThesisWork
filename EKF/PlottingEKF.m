@@ -68,23 +68,24 @@ plot(W_log.time(1:Nmax), xhatV(1:Nmax,12))
 legend('$w_{ny}$', '$\hat{w_{ny}}$', 'Interpreter', 'latex')
 
 %% Total Force
-%F_LDg = Forces.signals.values(1:Nmax,1) + Forces.signals.values(1:Nmax,1);
+%F_LDg = Forces.signals.values(1:Nmax,1) + Forces.signals.values(1:Nmax,4);
+% TO FINISH, also we are not comparing the same thing 
 
 figure(6), title('Total Force')
 subplot(3,1,1)
 plot(Forces.time(1:Nmax), Forces.signals.values(1:Nmax,1)), grid on, hold on
 plot(W_log.time(1:Nmax), xhatV(1:Nmax,13))
-legend('$w_{nx}$', '$\hat{w}_{nx}$', 'Interpreter', 'latex')
+legend('$F_{totx}$', '$\hat{F}_{totx}$', 'Interpreter', 'latex')
 
 subplot(3,1,2)
 plot(Forces.time(1:Nmax), Forces.signals.values(1:Nmax,2)), grid on, hold on
 plot(W_log.time(1:Nmax), xhatV(1:Nmax,14))
-legend('$w_{ny}$', '$\hat{w}_{ny}$', 'Interpreter', 'latex')
+legend('$F_{toty}$', '$\hat{F}_{toty}$', 'Interpreter', 'latex')
 
 subplot(3,1,3)
 plot(Forces.time(1:Nmax), Forces.signals.values(1:Nmax,3)), grid on, hold on
 plot(W_log.time(1:Nmax), xhatV(1:Nmax,15))
-legend('$w_{nz}$', '$\hat{w}_{nz}$', 'Interpreter', 'latex')
+legend('$F_{totz}$', '$\hat{F}_{totz}$', 'Interpreter', 'latex')
 
 
 
