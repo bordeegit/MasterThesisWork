@@ -1,4 +1,4 @@
-function [fxk,gradient] = GradientFD(fun,xk,method,dx)
+function [fxk,gradient] = GradientH(fun,xk,method,dx)
 % MYGRADIENT Computes the gradient (i.e. the Jacobian transpose) of a 
 % given function, using one of several possible methods.
 %   INPUTS:

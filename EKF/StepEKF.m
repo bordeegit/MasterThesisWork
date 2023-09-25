@@ -1,9 +1,9 @@
-function [x,P]=StepEKF(fstate,x,P,hmeas,y,Q,R, diffTs)
+function [x,P]=StepEKF(fstate,x,P,hmeas,y,Q,R, diffTs, us)
 
-    [x1,F] = GradientFD(fstate,x,'FD',diffTs);    %nonlinear update and linearization at current state
+    [x1,F] = GradientF(fstate,x, us,'FD',diffTs);    %nonlinear update and linearization at current state
     F = F';
     P=F*(P*F) + Q;                 %partial update
-    [y1,H] = GradientFD(hmeas,x1,'FD',diffTs);    %nonlinear measurement and linearization
+    [y1,H] = GradientH(hmeas,x1,'FD',diffTs);    %nonlinear measurement and linearization
     H = H';
     zhat = y - y1;
     S = H*P*H' + R;
