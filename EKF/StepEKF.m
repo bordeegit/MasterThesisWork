@@ -7,7 +7,7 @@ function [x,P]=StepEKF(fstate,x,P,hmeas,y,Q,R, diffTs, us)
     H = H';
     zhat = y - y1;
     S = H*P*H' + R;
-    K = P*H'/S;
+    K = P*H'*inv(S);
     x = x1 + K*zhat;
     P = (eye(size(x,1))-K*H)*P;
     

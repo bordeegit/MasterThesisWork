@@ -3,18 +3,6 @@ close all
 EKFPrep
 
 %% Summary of elements 
-% Position.signals.values(:,:) position r
-% PositionDot.signals.values(:,:) velocity rdot 
-% wr wind speed at reference height zr
-% phi_wr direction of wind at reference height zr
-% Forces.signals.values(:,end) cable traction force F_T
-% delta is zero always (see paper)
-
-% F_L and F_D seems hard to compute, especially if we are in global coords
-%   We can just skip them for now (differently from the paper), since we 
-%   don't care about them (also c_u will be skipped) just estimate total
-%   force maybe (this is not correct since we have apparent forces, but we
-%   can try)
 
 diffStepSize = 1e-5;                      % Differentiation Step Size
 Q = diag([1, 1, 1, 5, 5, 5, 30, 30, 30, 5,...  %Q(r,rd,rdd,v)
@@ -23,14 +11,14 @@ R = diag([0.001, 0.001, 0.001, 0.001, 0.001, 0.001, ...  %R(r,rd)
           0.001, 0.001, 0.001, 1e-15]);                  %R(wr,phir,F_T,delta)
 
 % initial state vector (17)
-x = [0.95*Position.signals.values(1,:)'        % r
+x = [0.9*Position.signals.values(1,:)'        % r
      1.1*PositionDot.signals.values(1,:)'     % rdot
-     [0,0,0]'                             % rdotdot 
-     1                                    % Lagrange Multiplier
+     [1,1,1]'                             % rdotdot 
+     0.1                                    % Lagrange Multiplier
      [10,10]'                               % W_n 
-     [0,0,0]'                                      % F_L vec
-     0                                        % F_D
-     0];                                        % c_u                                     
+     [1,1,1]'                                      % F_L vec
+     0.1                                        % F_D
+     0.1];                                        % c_u                                     
 us_vec = HLC_input.signals.values;
 
 % Measurements (get index at every loop)
