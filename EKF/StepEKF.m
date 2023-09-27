@@ -9,7 +9,7 @@ function [x,P]=StepEKF(fstate,x,P,hmeas,y,Q,R, diffTs, us)
     S = H*P*H' + R;
     K = P*H'*inv(S);
     x = x1 + K*zhat;
-    P = (eye(size(x,1))-K*H)*P;
+    P = (eye(size(x,1))-K*H)*P;   % Maybe use Joseph stabilized version?
     
     
 %     P12=P*H';                   %cross covariance
