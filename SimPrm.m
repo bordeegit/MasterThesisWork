@@ -54,47 +54,51 @@ mt_noL = 0.25*n_line*Line_diameter^2*pi*Line_density;
 
 %%%%% Wind Parameters %%%%%
 %% SHEAR WIND MODEL
-    hr=32.5;                                        % Wind shear model
-    phi_wr = 30*pi/180;
-    %phi_wr = 150*pi/180;
-    h0=6e-4; %BASE                                 % surface roughness
-    %h0 = 2;
-    %In Sheat Wind Estimation paper we get h0 =
-    %   0.15 for Category C flight phases(terminal flight phases, which 
-    %                                     include takeoff, approach,and
-    %                                     landing)
-    %   2.0 otherwise
-    wr=4;
+%     hr=32.5;                                        % Wind shear model
+%     phi_wr = 30*pi/180;
+%     %phi_wr = 150*pi/180;
+%     h0=6e-4; %BASE                                 % surface roughness
+%     %h0 = 2;
+%     %In Sheat Wind Estimation paper we get h0 =
+%     %   0.15 for Category C flight phases(terminal flight phases, which 
+%     %                                     include takeoff, approach,and
+%     %                                     landing)
+%     %   2.0 otherwise
+%     wr=4;
 
 % %% NEW WIND MODEL
-% %%% WRT Z %%%
-% height_Data = [0 5 10 15 20 25];
-% w_x_height_Data = [0 2 8 10 12 20];
-% 
-% [xDataCurve, yDataCurve] = prepareCurveData( height_Data, w_x_height_Data );
-% 
-% % Set up fittype and options
-% ft = fittype( 'smoothingspline' );
-% opts = fitoptions( 'Method', 'SmoothingSpline' );
-% opts.SmoothingParam = 0.8;
-% 
-% % Fit model to data.
-% [WxFunctionZ, ~] = fit( xDataCurve, yDataCurve, ft, opts );
-% 
-% %%% WRT XY %%%
-% x_pos_Data = [0,50,30,60,60,60,25,0,0];
-% y_pos_Data = [0,10,-10,0,-20,20,0,-20,20];
-% w_y_pos_Data = [0,10,5,0,0,0,0,0,0];
-% 
-% [xDataSurf, yDataSurf, zDataSurf] = prepareSurfaceData( x_pos_Data, y_pos_Data, w_y_pos_Data );
-% 
-% % Fit model to data.
-% [WyFunctionXY, ~] = fit( [xDataSurf, yDataSurf], zDataSurf, 'cubicinterp', 'Normalize', 'on' );
+%%% WRT Z %%%
+height_Data = [0 5 10 15 20 25];
+w_x_height_Data = [0 2 8 10 12 20];
+
+[xDataCurve, yDataCurve] = prepareCurveData( height_Data, w_x_height_Data );
+
+% Set up fittype and options
+ft = fittype( 'smoothingspline' );
+opts = fitoptions( 'Method', 'SmoothingSpline' );
+opts.SmoothingParam = 0.8;
+
+% Fit model to data.
+[WxFunctionZ, ~] = fit( xDataCurve, yDataCurve, ft, opts );
+
+%%% WRT XY %%%
+x_pos_Data = [0,50,30,60,60,60,25,0,0,100,100,100];
+y_pos_Data = [0,10,-10,0,-20,20,0,-20,20,0,-20,20];
+w_y_pos_Data = [0,10,5,0,0,0,0,0,0,0,0,0];
+
+[xDataSurf, yDataSurf, zDataSurf] = prepareSurfaceData( x_pos_Data, y_pos_Data, w_y_pos_Data );
+
+% Fit model to data.
+[WyFunctionXY, ~] = fit( [xDataSurf, yDataSurf], zDataSurf, 'cubicinterp', 'Normalize', 'on' );
+
+% Creating Function handles for simulink
+WxFncH = @(z)feval(WxFunctionZ,z);
+WyFncH = @(xy)feval(WyFunctionXY,xy);
 
 %%% Constant Wind %%%
-WindX = 5;                                      % Wind dist. X
-WindY = 0;                                      % Wind dist. Y
-WindZ = 0;                                      % Wind dist. Z
+ConstWindX = 5;                                      % Wind dist. X
+ConstWindY = 0;                                      % Wind dist. Y
+ConstWindZ = 0;                                      % Wind dist. Z
 
 %% CONTROL
 K_r= 1000;                                      % reeling control gain
