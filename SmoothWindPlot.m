@@ -3,7 +3,7 @@ Nx = 10; % Number of points in X direction
 Ny = 10; % Number of points in Y direction
 Nz = 10; % Number of points in Z direction
 
-[x_points, y_points, z_points] = meshgrid(linspace(40,60,Nx), linspace(-20,20,Ny), linspace(10,30,Nz));
+[x_points, y_points, z_points] = meshgrid(linspace(40,100,Nx), linspace(-50,50,Ny), linspace(10,40,Nz));
 
 % Creating wind vectors and populating (careful of limits)
 WindVectors = zeros(Nx, Ny, Nz, 3);

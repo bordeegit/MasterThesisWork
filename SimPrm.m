@@ -68,8 +68,8 @@ mt_noL = 0.25*n_line*Line_diameter^2*pi*Line_density;
 
 % %% NEW WIND MODEL
 %%% WRT Z %%%
-height_Data = [0 5 10 15 20 25];
-w_x_height_Data = [0 2 8 10 12 20];
+height_Data = [0 5 10 15 20 25 40 50];
+w_x_height_Data = [0 2 8 10 12 20 20 20];
 
 [xDataCurve, yDataCurve] = prepareCurveData( height_Data, w_x_height_Data );
 
@@ -82,9 +82,9 @@ opts.SmoothingParam = 0.8;
 [WxFunctionZ, ~] = fit( xDataCurve, yDataCurve, ft, opts );
 
 %%% WRT XY %%%
-x_pos_Data = [0,50,30,60,60,60,25,0,0,100,100,100];
-y_pos_Data = [0,10,-10,0,-20,20,0,-20,20,0,-20,20];
-w_y_pos_Data = [0,10,5,0,0,0,0,0,0,0,0,0];
+x_pos_Data = [0,50,30,60,60,60,25,0,0,100,100,100,80];
+y_pos_Data = [0,10,-10,0,-50,50,0,-50,50,0,-50,50,-20];
+w_y_pos_Data = [0,10,5,0,0,0,0,0,0,0,0,0,-10];
 
 [xDataSurf, yDataSurf, zDataSurf] = prepareSurfaceData( x_pos_Data, y_pos_Data, w_y_pos_Data );
 
