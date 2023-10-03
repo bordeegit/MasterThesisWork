@@ -1,9 +1,8 @@
 function [xkp1] = StateEquations(xk, u_sk, Ts, mk, mt_noL)
-%STATEEquations Summary of this function goes here
     
     w_a = [xk(11:12); 0] - xk(4:6);   % w_a = w_n - rdot
     L = norm(xk(1:3));
-    g = [0,0,9.81]';
+    g = [0;0;9.81];
     m = mk + mt_noL*L; % this may not be correct, ask
 
     xkp1 = zeros(17,1);

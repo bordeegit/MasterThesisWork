@@ -21,16 +21,16 @@ PositionDot.signals.values = [Ldot.*sin(th).*cos(ph)+L.*(thdot.*cos(th).*cos(ph)
 
 % Plotting
 if(Plotting)
-figure
-subplot(3,1,1)
-plot(PositionDot.time, PositionDot.signals.values(:,1),'k'), grid on
-xlabel('time (s)'), ylabel('Kite Vel X (m/s)')
-subplot(3,1,2)
-plot(PositionDot.time, PositionDot.signals.values(:,2),'k'), grid on
-xlabel('time (s)'), ylabel('Kite Vel Y (m/s)')
-subplot(3,1,3)
-plot(PositionDot.time, PositionDot.signals.values(:,3),'k'), grid on
-xlabel('time (s)'), ylabel('Kite Vel Z (m/s)')
+    figure
+    subplot(3,1,1)
+    plot(PositionDot.time, PositionDot.signals.values(:,1),'k'), grid on
+    xlabel('time (s)'), ylabel('Kite Vel X (m/s)')
+    subplot(3,1,2)
+    plot(PositionDot.time, PositionDot.signals.values(:,2),'k'), grid on
+    xlabel('time (s)'), ylabel('Kite Vel Y (m/s)')
+    subplot(3,1,3)
+    plot(PositionDot.time, PositionDot.signals.values(:,3),'k'), grid on
+    xlabel('time (s)'), ylabel('Kite Vel Z (m/s)')
 end
 
 %% Others 
