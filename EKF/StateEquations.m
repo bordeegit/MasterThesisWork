@@ -2,8 +2,8 @@ function [xkp1] = StateEquations(xk, u_sk, Ts, mk, mt_noL)
     
     w_a = [xk(11:12); 0] - xk(4:6);   % w_a = w_n - rdot
     L = norm(xk(1:3));
-    g = [0;0;9.81];
-    m = mk + mt_noL*L; % this may not be correct, ask
+    g = [0;0;-9.81];
+    m = mk + 0.25*mt_noL*L;
 
     xkp1 = zeros(17,1);
     A = [m*eye(3), xk(1:3) ; xk(1:3)', 0];

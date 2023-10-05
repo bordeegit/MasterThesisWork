@@ -8,7 +8,7 @@ diffStepSize = 1e-5;                      % Differentiation Step Size
 Q = diag([1, 1, 1, 5, 5, 5, 30, 30, 30, 5,...  %Q(r,rd,rdd,v)
           5, 1000, 1000, 1000, 1000, 5, 0.1]); %Q(wn,F_L,F_D,cu)
 R = diag([0.001, 0.001, 0.001, 0.001, 0.001, 0.001, ...  %R(r,rd)
-          0.001, 1e-15]);                                %R(F_T,delta)
+          0.001, 0.001]);                                %R(F_T,delta)
 
 % initial state vector x0 (17)
 x = [0.9*Position.signals.values(1,:)'        % r
