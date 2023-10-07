@@ -1,6 +1,6 @@
 function [xkp1] = StateEquations(xk, input, Ts, mk, mt_noL)
     
-    w_a = [xk(11:12); 0] - xk(4:6);   % w_a = w_n - rdot
+    w_a = [xk(10:11); 0] - xk(4:6);   % w_a = w_n - rdot
     L = norm(xk(1:3));
     g = [0;0;-9.81];
     m = mk + 0.25*mt_noL*L;

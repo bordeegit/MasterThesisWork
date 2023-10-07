@@ -14,7 +14,7 @@ R = diag([0.001, 0.001, 0.001, 0.001, 0.001, 0.001, ...  %R(r,rd)
 x = [0.9*Position.signals.values(1,:)'        % r
      1.1*PositionDot.signals.values(1,:)'     % rdot
      [0.1,0.1,0.1]'                             % rdotdot 
-     [1,1]'                               % W_n 
+     [5,5]'                               % W_n 
      [1,1,1]'                                      % F_L vec
      0.1                                      % F_D
      0.1];                                        % c_u                                     
@@ -25,6 +25,7 @@ F_T_vec = Forces.signals.values(:,4);
 
 % y = [Position.signals.values(ind,:)'       % r_meas (3)
 %      PositionDot.signals.values(ind,:)'    % rdot_meas (3)
+%      PositionDotDot.signals.values(ind,:)' % rdotdot_meas (3)
 %      delta(ind,1)];                        % delta, forcing perp., always 0
 
 input = [us_vec(1);F_T_vec(1)];
