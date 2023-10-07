@@ -4,20 +4,25 @@
 % Equations are derived in (16) of the paper.
 % PositionDot is created based on Position, so that they will share the
 % same structure, as if it was logged during the simulation.
+
+% Note that theta and thetadot are converted back to the convention used in
+% the model (they where modified because of the controller)
+
 Plotting = false;
 PositionDot = Position;
 PositionDot.signals.label = '<PositionDot>';
 
 L = r.signals.values;
 Ldot = rdot.signals.values;
-th = theta.signals.values;
-thdot = thetadot.signals.values;
+th = pi/2 - theta.signals.values;  % Reverted back
+thdot = -thetadot.signals.values;  % Reverted back
 ph = phi.signals.values;
 phdot = phi.signals.values;
 
 PositionDot.signals.values = [Ldot.*sin(th).*cos(ph)+L.*(thdot.*cos(th).*cos(ph)-phdot.*sin(th).*sin(ph)) ... 
                Ldot.*sin(th).*sin(ph)+L.*(thdot.*cos(th).*sin(ph)+phdot.*sin(th).*cos(ph)) ...
                Ldot.*cos(th)-L.*thdot.*sin(th)];
+
 
 % Plotting
 if(Plotting)
@@ -32,10 +37,4 @@ if(Plotting)
     plot(PositionDot.time, PositionDot.signals.values(:,3),'k'), grid on
     xlabel('time (s)'), ylabel('Kite Vel Z (m/s)')
 end
-
-%% Others 
-
-
-% delta = zeros(12001,1);             % Delta
-
 
