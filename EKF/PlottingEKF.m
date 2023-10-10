@@ -74,17 +74,17 @@ figure(5), sgtitle('Lift Force')
 subplot(3,1,1)
 plot(timePlot, Forces.signals.values(1:Nmax,4)), grid on, hold on
 plot(timePlot, xhatV(1:Nmax,12))
-legend('$F_{lx}$', '$\hat{F}_{lx}$', 'Interpreter', 'latex')
+legend('$F_{Lx}$', '$\hat{F}_{Lx}$', 'Interpreter', 'latex')
 
 subplot(3,1,2)
 plot(timePlot, Forces.signals.values(1:Nmax,5)), grid on, hold on
 plot(timePlot, xhatV(1:Nmax,13))
-legend('$F_{ly}$', '$\hat{F}_{ly}$', 'Interpreter', 'latex')
+legend('$F_{Ly}$', '$\hat{F}_{Ly}$', 'Interpreter', 'latex')
 
 subplot(3,1,3)
 plot(timePlot, Forces.signals.values(1:Nmax,6)), grid on, hold on
 plot(timePlot, xhatV(1:Nmax,14))
-legend('$F_{lz}$', '$\hat{F}_{lz}$', 'Interpreter', 'latex')
+legend('$F_{Lz}$', '$\hat{F}_{Lz}$', 'Interpreter', 'latex')
 
 %% Drag Force Magnitude
 

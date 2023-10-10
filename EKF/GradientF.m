@@ -1,4 +1,4 @@
-function [fxk,gradient] = GradientF(fun,xk,us,method,dx)
+function [fxk,gradient] = GradientF(fun,xk,input,method,dx)
 % MYGRADIENT Computes the gradient (i.e. the Jacobian transpose) of a 
 % given function, using one of several possible methods.
 %   INPUTS:
@@ -24,45 +24,45 @@ function [fxk,gradient] = GradientF(fun,xk,us,method,dx)
 %                           evaluated at xk
  
 if strcmp(method,'UP')
-    [fxk,gradient]  =   fun(xk,us);
+    [fxk,gradient]  =   fun(xk,input);
 elseif strcmp(method,'FD')
     n               =   length(xk);
     p               =   zeros(n,1);
-    fxk             =   fun(xk,us);
+    fxk             =   fun(xk,input);
     N               =   length(fxk);
     gradient        =   zeros(n,N);
     p(1,1)          =   dx;
-    gradient(1,:)   =   (fun(xk+p,us)-fun(xk,us))'/dx;
+    gradient(1,:)   =   (fun(xk+p,input)-fun(xk,input))'/dx;
     for ind = 2:n
         p(ind-1,1)      =   0;
         p(ind,1)        =   dx;
-        gradient(ind,:) =   (fun(xk+p,us)-fun(xk,us))'/dx;
+        gradient(ind,:) =   (fun(xk+p,input)-fun(xk,input))'/dx;
     end
 elseif strcmp(method,'CD')
     n               =   length(xk);
     p               =   zeros(n,1);
-    fxk             =   fun(xk,us);
+    fxk             =   fun(xk,input);
     N               =   length(fxk);
     gradient        =   zeros(n,N);
     p(1,1)          =   dx;
-    gradient(1,:)   =   (fun(xk+p,us)-fun(xk-p,us))'/(2*dx);
+    gradient(1,:)   =   (fun(xk+p,input)-fun(xk-p,input))'/(2*dx);
     for ind = 2:n
         p(ind-1,1)      =   0;
         p(ind,1)        =   dx;
-        gradient(ind,:) =   (fun(xk+p,us)-fun(xk-p,us))'/(2*dx);
+        gradient(ind,:) =   (fun(xk+p,input)-fun(xk-p,input))'/(2*dx);
     end
 elseif strcmp(method,'IM')
     n               =   length(xk);
     p               =   zeros(n,1);
-    fxk             =   fun(xk,us);
+    fxk             =   fun(xk,input);
     N               =   length(fxk);
     gradient        =   zeros(n,N);
     tol             =   1e-100;
     p(1,1)          =   1j*tol;
-    gradient(1,:)   =   imag(fun(xk+p,us))'/tol;
+    gradient(1,:)   =   imag(fun(xk+p,input))'/tol;
     for ind = 2:n
         p(ind-1,1)      =   0;
         p(ind,1)        =   1j*tol;
-        gradient(ind,:) =   imag(fun(xk+p,us))'/tol;
+        gradient(ind,:) =   imag(fun(xk+p,input))'/tol;
     end
 end

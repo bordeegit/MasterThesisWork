@@ -1,6 +1,4 @@
 function [y] = MeasurementEquations(x)
-%MEASUREMENTEQUATIONS 
-%   Function to compute the measurement vector y
 
     y = zeros(10,1);
 
