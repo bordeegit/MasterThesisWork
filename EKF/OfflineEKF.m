@@ -4,11 +4,11 @@ EKFPrep
 
 %% Summary of elements 
 
-diffStepSize = 1e-5;                      % Differentiation Step Size
-Q = diag([1, 1, 1, 5, 5, 5, 30, 30, 30,...  %Q(r,rd,rdd)
+diffStepSize = 1e-7;                      % Differentiation Step Size
+Q = diag([1, 1, 1, 5, 5, 5, 30,30,30,...  %Q(r,rd,rdd)
           10, 10, 1000, 1000, 1000, 5, 0.1]); %Q(wn,F_L,F_D,cu)
 R = diag([0.001, 0.001, 0.001, 0.001, 0.001, 0.001, ...  %R(r,rd)
-          0.001, 0.001, 0.001, 0.001]);                  %R(rdd, delta)
+          10, 10, 10, 1e-15]);                  %R(rdd,delta)
 
 % initial state vector x0 (16)
 x = [0.9*Position.signals.values(1,:)'        % r
@@ -44,7 +44,7 @@ h = @(x)MeasurementEquations(x);           % Measurement Equations
 
 n = size(x,1);                              % Number of States
 P = diag((x-x0).^2);                   % State Covariance P0
-N = 5000;                                 % Number of Steps (12001 max)
+N = 12001;                                 % Number of Steps (12001 max)
 
 xhatV = zeros(N, n);                % Logging estimate  
 zhatV_norm = zeros(N,1);
@@ -52,7 +52,7 @@ zhatV_norm = zeros(N,1);
 for ind=1:N
   y = [Position.signals.values(ind,:)';% + 0.5*[rand,rand,rand]';         % r_meas
        PositionDot.signals.values(ind,:)';% + 0.5*[rand,rand,rand]';     % rdot_meas
-       PositionDotDot.signals.values(ind,:)';% + 0.5*[rand,rand,rand]';  % rdotdot_meas
+       PositionDotDot.signals.values(ind,:)';% + 0.5*[rand,rand,rand]';     % rdot_meas
        0];                                                              % delta
   [x, P,zhat] = StepEKF(f,x,P,h,y,Q,R, diffStepSize, [us_vec(ind);F_T_vec(ind)]);   % ekf
   xhatV(ind,:)= x;                                          % Save Estimate
