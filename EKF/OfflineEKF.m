@@ -13,13 +13,22 @@ R = diag([0.001, 0.001, 0.001, 0.001, 0.001, 0.001, ...  %R(r,rd)
 % initial state vector x0 (16)
 x = [0.9*Position.signals.values(1,:)'        % r
      1.1*PositionDot.signals.values(1,:)'     % rdot
-     [0.1,0.1,0.1]'                             % rdotdot 
+     1.1*PositionDotDot.signals.values(1,:)'      % rdotdot 
      [5,5]'                               % W_n 
      [1,1,1]'                                      % F_L vec
      0.1                                      % F_D
      0.1];                                        % c_u                                     
 us_vec = HLC_input.signals.values;
 F_T_vec = Forces.signals.values(:,4);
+
+% True initial state vector, used for P initialization
+x0 = [Position.signals.values(1,:)'        % r
+      PositionDot.signals.values(1,:)'     % rdot
+      PositionDotDot.signals.values(1,:)'      % rdotdot 
+      W_log.signals.values(1,1:2)'                     % W_n 
+     [1,1,1]'                                      % F_L vec
+     0.1                                      % F_D
+     0.1];
 
 % Measurements (get index at every loop)
 
@@ -34,7 +43,7 @@ f = @(x,us)StateEquations(x, input, Ts_10ms, mass, mt_noL);   % State Equations
 h = @(x)MeasurementEquations(x);           % Measurement Equations
 
 n = size(x,1);                              % Number of States
-P = eye(n);                                 % State Covariance P0
+P = diag((x-x0)'*(x-x0));                   % State Covariance P0
 N = 5000;                                 % Number of Steps (12001 max)
 
 xhatV = zeros(N, n);                % Logging estimate  

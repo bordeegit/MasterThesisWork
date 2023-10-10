@@ -59,43 +59,44 @@ legend('$\ddot{r}[3]$', '$\ddot{\hat{r}}[3]$', 'Interpreter', 'latex')
 %% Nominal Wind
 figure(4), sgtitle('Nominal Wind')
 subplot(2,1,1)
-plot(W_log.time(1:Nmax), W_log.signals.values(1:Nmax,1)), grid on, hold on
-plot(W_log.time(1:Nmax), xhatV(1:Nmax,10))
+plot(timePlot, W_log.signals.values(1:Nmax,1)), grid on, hold on
+plot(timePlot, xhatV(1:Nmax,10))
 legend('$w_{nx}$', '$\hat{w_{nx}}$', 'Interpreter', 'latex')
 
 subplot(2,1,2)
-plot(W_log.time(1:Nmax), W_log.signals.values(1:Nmax,2)), grid on, hold on
-plot(W_log.time(1:Nmax), xhatV(1:Nmax,11))
+plot(timePlot, W_log.signals.values(1:Nmax,2)), grid on, hold on
+plot(timePlot, xhatV(1:Nmax,11))
 legend('$w_{ny}$', '$\hat{w_{ny}}$', 'Interpreter', 'latex')
 
 %% Lift Force
 
 figure(5), sgtitle('Lift Force')
 subplot(3,1,1)
-plot(Forces.time(1:Nmax), Forces.signals.values(1:Nmax,1)), grid on, hold on
-plot(W_log.time(1:Nmax), xhatV(1:Nmax,12))
-legend('$F_{totx}$', '$\hat{F}_{totx}$', 'Interpreter', 'latex')
+plot(timePlot, Forces.signals.values(1:Nmax,4)), grid on, hold on
+plot(timePlot, xhatV(1:Nmax,12))
+legend('$F_{lx}$', '$\hat{F}_{lx}$', 'Interpreter', 'latex')
 
 subplot(3,1,2)
-plot(Forces.time(1:Nmax), Forces.signals.values(1:Nmax,2)), grid on, hold on
-plot(W_log.time(1:Nmax), xhatV(1:Nmax,13))
-legend('$F_{toty}$', '$\hat{F}_{toty}$', 'Interpreter', 'latex')
+plot(timePlot, Forces.signals.values(1:Nmax,5)), grid on, hold on
+plot(timePlot, xhatV(1:Nmax,13))
+legend('$F_{ly}$', '$\hat{F}_{ly}$', 'Interpreter', 'latex')
 
 subplot(3,1,3)
-plot(Forces.time(1:Nmax), Forces.signals.values(1:Nmax,3)), grid on, hold on
-plot(W_log.time(1:Nmax), xhatV(1:Nmax,14))
-legend('$F_{totz}$', '$\hat{F}_{totz}$', 'Interpreter', 'latex')
+plot(timePlot, Forces.signals.values(1:Nmax,6)), grid on, hold on
+plot(timePlot, xhatV(1:Nmax,14))
+legend('$F_{lz}$', '$\hat{F}_{lz}$', 'Interpreter', 'latex')
 
 %% Drag Force Magnitude
 
 figure(6), sgtitle('Drag Force Magnitude')
-plot(W_log.time(1:Nmax), xhatV(1:Nmax,15)), grid on
-legend('$|F_{D}|$', 'Interpreter', 'latex')
+plot(timePlot, drag_norm(1:Nmax)), grid on, hold on
+plot(timePlot, xhatV(1:Nmax,15))
+legend('$|F_{D}|$','$\hat{|F_{D}|}$','Interpreter', 'latex'), hold off
 
 %% Linear relationship between the steering input and the angular rate
 
 figure(7), sgtitle('Steering Coefficient')
-plot(W_log.time(1:Nmax), xhatV(1:Nmax,16)), grid on
+plot(timePlot, xhatV(1:Nmax,16)), grid on
 legend('$c_u$', 'Interpreter', 'latex')
 
 

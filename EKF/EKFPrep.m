@@ -23,8 +23,18 @@ PositionDot.signals.values = [Ldot.*sin(th).*cos(ph)+L.*(thdot.*cos(th).*cos(ph)
                Ldot.*sin(th).*sin(ph)+L.*(thdot.*cos(th).*sin(ph)+phdot.*sin(th).*cos(ph)) ...
                Ldot.*cos(th)-L.*thdot.*sin(th)];
 
+%% Computation of drag magnitude 
 
-% Plotting
+sz = size(Forces.time,1);
+
+drag_norm = zeros(sz,1);
+
+for i = 1:sz
+    drag_norm(i) = norm(Forces.signals.values(i,4:6));
+end
+
+
+%% Plotting
 if(Plotting)
     figure
     subplot(3,1,1)
