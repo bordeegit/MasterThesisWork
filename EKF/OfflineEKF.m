@@ -8,7 +8,7 @@ diffStepSize = 1e-5;                            % Differentiation Step Size
 Q = diag([1, 1, 1, 5, 5, 5, 30,30,30,...        %Q(r,rd,rdd)
           10, 10, 1000, 1000, 1000, 5, 0.1]);   %Q(wn,F_L,F_D,cu)
 R = diag([0.001, 0.001, 0.001, 0.001, 0.001, 0.001, ...  %R(r,rd)
-           ]);                              
+          1e-10]);                              
 
 % initial state vector x0 (16)
 x = [0.9*Position.signals.values(1,:)'          % r
@@ -50,8 +50,8 @@ zhatV_norm = zeros(N,1);
 
 for ind=1:N
   y = [Position.signals.values(ind,:)' + 0.5*[rand,rand,rand]';         % r_meas
-       PositionDot.signals.values(ind,:)' + 0.5*[rand,rand,rand]'];      % rdot_meas
-    
+       PositionDot.signals.values(ind,:)' + 0.5*[rand,rand,rand]'       % rdot_meas
+       0];                                                              % delta
   [x, P,zhat] = StepEKF(f,x,P,h,y,Q,R, diffStepSize, [us_vec(ind);F_T_vec(ind)]);   % ekf
 xhatV(ind,:)= x;                                % Save Estimate
   zhatV_norm(ind)= norm(zhat);
