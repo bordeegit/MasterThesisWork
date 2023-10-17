@@ -96,7 +96,8 @@ legend('$|F_{D}|$','$\hat{|F_{D}|}$','Interpreter', 'latex'), hold off
 %% Linear relationship between the steering input and the angular rate
 
 figure(7), sgtitle('Steering Coefficient')
-plot(timePlot, xhatV(1:Nmax,16)), grid on
+plot(timePlot, xhatV(1:Nmax,16)), grid on, hold on
+yline(mean(xhatV(:,16)), '-.', 'Mean','LineWidth',2)
 legend('$c_u$', 'Interpreter', 'latex')
 
 
