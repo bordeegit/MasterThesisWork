@@ -1,2 +1,6 @@
 # List of untracked files to ignore
 /slprj
+/codegen
+/Examples
+*.mexw64
+*.asv
