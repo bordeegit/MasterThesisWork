@@ -16,10 +16,10 @@ function [ftot] = Wind_cost_GN(z,p)
     
     rdd = (Fl + Fd + Fg - Ft)/m;
 
-    f = p.Q*(p.rdd_meas-rdd);  % 2-norm squared
+    F = p.Q*(p.rdd_meas-rdd);  % should be the same of 2-norm squared
 
     g = z(4)*(z(1) - p.rd_meas(1)) + z(5)*(z(2) - p.rd_meas(2)) + z(6)*(z(3) - p.rd_meas(3));
     
-    ftot = [f;g];
+    ftot = [F;g];
 end
 

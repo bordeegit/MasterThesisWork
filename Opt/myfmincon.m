@@ -69,7 +69,7 @@ end
 %% Iterations
 if strcmp(myoptions.Hessmethod,'GN')    % Constrained Gauss-Newton method
     % Compute cost and constraints and their gradients
-    funF                =   myoptions.GN_funF;
+    funF                =   fun;
     xk                  =   x0;
     [Vk,gradVk]         =   mygradient(funF,x0,myoptions.gradmethod,myoptions.graddx);
     Fxk                 =   Vk(1:end-(p+q),1);
