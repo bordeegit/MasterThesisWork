@@ -23,7 +23,7 @@ plot3([0, Position.signals.values(end,1)],...
       [0, Position.signals.values(end,2)],...
       [0, Position.signals.values(end,3)], 'b-o')
 xlabel('X (m)'), ylabel('Y (m)'), zlabel('Z (m)')
-WindPlot
+SmoothWindPlot
 
 % Theta, phi
 figure(6),plot(theta.time,theta.signals.values(:,end),'k',phi.time,phi.signals.values(:,end),'k-.'),grid on,hold on
@@ -44,5 +44,17 @@ xlabel('time (s)'), ylabel('Wind Y (m/s)')
 subplot(3,1,3)
 plot(W_log.time, W_log.signals.values(:,3),'k'), grid on
 xlabel('time (s)'), ylabel('Wind Z (m/s)')
+
+% Speed
+figure(9)
+subplot(3,1,1)
+plot(PositionDot.time, PositionDot.signals.values(:,1),'k'), grid on
+xlabel('time (s)'), ylabel('Kite Vel X (m/s)')
+subplot(3,1,2)
+plot(PositionDot.time, PositionDot.signals.values(:,2),'k'), grid on
+xlabel('time (s)'), ylabel('Kite Vel Y (m/s)')
+subplot(3,1,3)
+plot(PositionDot.time, PositionDot.signals.values(:,3),'k'), grid on
+xlabel('time (s)'), ylabel('Kite Vel Z (m/s)')
 
 
