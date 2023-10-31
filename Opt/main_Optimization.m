@@ -12,6 +12,8 @@ parameters.g = g;
 parameters.Ts           = Ts_10ms; % Not currently used
 z0                      = [W_log.signals.values(1,:)';
                            0.9; 0.1; sqrt(1-0.9^2-0.1^2)]; %1/sqrt(3)*ones(3,1)];
+%z0                      = [8;3;0; %W_log.signals.values(1,:)';
+%                           0.9; 0.1; sqrt(1-0.9^2-0.1^2)]; %1/sqrt(3)*ones(3,1)];
 Nop                     = size(z0,1);
 parameters.r_meas       = Position.signals.values(1,:)';
 parameters.rd_meas      = PositionDot.signals.values(1,:)';
@@ -19,13 +21,13 @@ parameters.rdd_meas     = PositionDotDot.signals.values(1,:)';
 parameters.F_T_norm     = Forces.signals.values(1,end);
 parameters.Cl           = Cl.signals.values(1);
 parameters.Cd           = Cd.signals.values(1);
-%parameters.Fl           = Forces.signals.values(1,4:6)'; %!!!
 N_opt                   = 500; % Number of steps to perform optimization
 W0_vec                  = [z0(1:3)';zeros(N_opt-1, 3)];
-parameters.Q            = 1e5*diag(ones(3,1));
+parameters.Q            = 1e6*diag(ones(3,1));
 parameters.Qw           = 1e3*diag(ones(6,1));
 parameters.zold         = z0;
 parameters.deltaNorm    = 0.01;   % Delta for Zl nonlin. ineq. constrain
+parameters.deltaOrth    = 0.1;   % Delta for Zl*wa nonlin. ineq. constrain
 
 % Equality Constaints (W_z = 0)
 A = zeros(Nop,Nop);
@@ -41,6 +43,10 @@ C(8,2) = 1;
 d = [-15;-10; zeros(4,1);
      5;-2; zeros(4,1)];
 
+% Numbers of nonlinera constraints
+p = 0;
+q = 4;
+
 % Optimization Options
 myoptions               = myoptimset;
 myoptions.Hessmethod    = 'GN';  % Select BFGS or GN
@@ -50,8 +56,8 @@ myoptions.tolgrad    	= 1e-6;               %default : 1e-6
 myoptions.tolfun        = 1e-12;              %default : 1e-12  
 myoptions.ls_beta       = 0.2;%0.2;                %default : 0.8       
 myoptions.ls_c          = 0.1;                %default : 0.1
-myoptions.ls_nitermax   = 100; %100                %default : 20
-myoptions.nitermax      = 200; %200;                %default : 50
+myoptions.ls_nitermax   = 20; %100                %default : 20
+myoptions.nitermax      = 50; %200;                %default : 50
 myoptions.xsequence 	= 'off';
 myoptions.display       = 'off';  % or Iter
 myoptions.BFGS_gamma 	= 0.1;                %default : 1e-1
@@ -63,7 +69,7 @@ codegen Wind_cost_GN -args {z0,parameters} -lang:c++
 
 tic
 for i=2:N_opt
-    [zstar,fxstar,k,exitflag,~] = myfmincon(@(z)Wind_cost_mex(z,parameters),z0,A,b,C,d,1,2,myoptions);
+    [zstar,fxstar,k,exitflag,~] = myfmincon(@(z)Wind_cost_mex(z,parameters),z0,A,b,C,d,p,q,myoptions);
     z0                      = zstar;
     parameters.r_meas       = Position.signals.values(i,:)';
     parameters.rd_meas      = PositionDot.signals.values(i,:)';
