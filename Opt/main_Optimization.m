@@ -28,6 +28,7 @@ parameters.Qw           = 1e3*diag(ones(6,1));
 parameters.zold         = z0;
 parameters.deltaNorm    = 0.01;   % Delta for Zl nonlin. ineq. constrain
 parameters.deltaOrth    = 0.1;   % Delta for Zl*wa nonlin. ineq. constrain
+parameters.deltaWind    = [5;1]; % Delta for diff btw Zl_x, Zl_y and old
 
 % Equality Constaints (W_z = 0)
 A = zeros(Nop,Nop);
@@ -45,7 +46,7 @@ d = [-15;-10; zeros(4,1);
 
 % Numbers of nonlinera constraints
 p = 0;
-q = 4;
+q = 4+4;
 
 % Optimization Options
 myoptions               = myoptimset;
@@ -57,7 +58,7 @@ myoptions.tolfun        = 1e-12;              %default : 1e-12
 myoptions.ls_beta       = 0.2;%0.2;                %default : 0.8       
 myoptions.ls_c          = 0.1;                %default : 0.1
 myoptions.ls_nitermax   = 20; %100                %default : 20
-myoptions.nitermax      = 50; %200;                %default : 50
+myoptions.nitermax      = 100; %200;                %default : 50
 myoptions.xsequence 	= 'off';
 myoptions.display       = 'off';  % or Iter
 myoptions.BFGS_gamma 	= 0.1;                %default : 1e-1
@@ -70,7 +71,7 @@ codegen Wind_cost_GN -args {z0,parameters} -lang:c++
 tic
 for i=2:N_opt
     [zstar,fxstar,k,exitflag,~] = myfmincon(@(z)Wind_cost_mex(z,parameters),z0,A,b,C,d,p,q,myoptions);
-    z0                      = zstar;
+    %z0                      = zstar;
     parameters.r_meas       = Position.signals.values(i,:)';
     parameters.rd_meas      = PositionDot.signals.values(i,:)';
     parameters.rdd_meas     = PositionDotDot.signals.values(i,:)';

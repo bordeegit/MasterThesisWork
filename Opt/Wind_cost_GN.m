@@ -10,11 +10,12 @@ function [ftot] = Wind_cost_GN(z,p)
     Ft = p.F_T_norm*p.r_meas/L;
     Fl = 0.5*p.rho*p.A*p.Cl*wa_norm^2*z(4:6);
     Fd = 0.5*p.rho*p.A*p.Cd*wa_norm^2*wa/wa_norm;
+    zdiff = z-p.zold;
     
     rdd = (Fl + Fd + Fg - Ft)/m;
 
     F = [p.Q*(p.rdd_meas-rdd);
-         p.Qw*(z-p.zold)];  % should be the same of 2-norm squared
+         p.Qw*zdiff];  % should be the same of 2-norm squared
 
     %g = [z(4)*(z(1)-p.rd_meas(1))+z(5)*(z(2)-p.rd_meas(2))+z(6)*(z(3)-p.rd_meas(3))];
          %sqrt(z(4)^2+z(5)^2+z(6)^2)-1];
@@ -22,7 +23,9 @@ function [ftot] = Wind_cost_GN(z,p)
     h = [-(z(4)*wa(1)+z(5)*wa(2)+z(6)*wa(3))+p.deltaOrth;
          (z(4)*wa(1)+z(5)*wa(2)+z(6)*wa(3))+p.deltaOrth;
          -sqrt(z(4)^2+z(5)^2+z(6)^2)+1+p.deltaNorm;
-         sqrt(z(4)^2+z(5)^2+z(6)^2)-1+p.deltaNorm];
+         sqrt(z(4)^2+z(5)^2+z(6)^2)-1+p.deltaNorm;
+         -zdiff(1:2)+p.deltaWind;
+         zdiff(1:2)+p.deltaWind];
     %g = 0;
 
     ftot = [F;h];
