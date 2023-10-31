@@ -1,8 +1,10 @@
 close all 
 
+options = optimoptions('fsolve');
+options.MaxFunctionEvaluations = 2000;
 
 %ind = 427 first time we arrive at F_T > 10000
-ind = 500;
+ind = 12001;
 W_meas               = W_log.signals.values(ind,:)';
 pm.r_meas            = Position.signals.values(ind,:)';
 pm.rd_meas           = PositionDot.signals.values(ind,:)';
@@ -15,20 +17,20 @@ pm.A                 = area;
 pm.rho               = rho;
 pm.mt_noL            = mt_noL;
 pm.Fl_meas           = Forces.signals.values(ind,4:6)';
-pm.zl_meas           = Fl_meas/norm(Fl_meas); 
+pm.zl_meas           = pm.Fl_meas/norm(pm.Fl_meas); 
 
  
 
 fun = @(x)accDiff(x,pm);
 %x0 = W_meas; 
 x0 = [0;0;0];
-x = fsolve(fun, x0)
+x = fsolve(fun, x0, options);
 
 fprintf("Estimated Wind is [%.2f,%.2f,%.2f]\nActual Wind is [%.2f,%.2f,%.2f]\n", ...
     x(1), x(2), x(3), W_meas(1),W_meas(2),W_meas(3));
 
 function F = accDiff(x, pm)
-
+    
     x(3) = 0;
     L = norm(pm.r_meas);
     m = pm.mk + 0.25*pm.mt_noL*L;
@@ -40,6 +42,10 @@ function F = accDiff(x, pm)
     Fd = 0.5*pm.rho*pm.A*pm.Cd_meas*wa_norm^2*wa/wa_norm;
 
     rdd = (Fl + Fd + Fg - Ft)/m;
+    
+    F(1) = rdd(1) - pm.rdd_meas(1);
+    F(2) = rdd(2) - pm.rdd_meas(2);
+    F(3) = rdd(3) - pm.rdd_meas(3);
 
-    F = rdd - pm.rdd_meas; 
+    %F(3) = x(3);
 end
