@@ -1,5 +1,5 @@
 close all
-Nmax = 12001;
+Nmax = N;
 
 timePlot = Position.time(1:Nmax);
 
