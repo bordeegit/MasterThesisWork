@@ -10,11 +10,14 @@ end
 
 %% EKF Parameters and Execution
 
-diffStepSize = 1e-5;                            % Differentiation Step Size
-Q = diag([1, 1, 1, 5, 5, 5, 30,30,30,...        %Q(r,rd,rdd)
-          5, 5, 1000, 1000, 1000, 5, 0.1]);   %Q(wn,F_L,F_D,cu)
+diffStepSize = 1e-7;                            % Differentiation Step Size
+%Q = diag(0.1*ones(16,1));
+Q = diag([1, 1, 1, 5, 5, 5, 30, 30, 30, ... %Q(r,rd,rdd)
+          5, 1, 3e+06, 1.e+07, 1.6e+06, 10000, 0.1]);        %Q(wn,F_L,F_D,cu)
+          
 R = diag([0.001, 0.001, 0.001, 0.001, 0.001, 0.001, ...  %R(r,rd)
-          1e-15]);                              % R(delta)
+          0.001, 0.001, 0.001, 1e-15]);                  %R(rdd,delta)
+R = diag(0.0001*ones(10,1));  
 
 % initial state vector x0 (16)
 x = [0.5*Position.signals.values(1,:)'          % r
@@ -40,6 +43,7 @@ x0 = [Position.signals.values(1,:)'             % r
 
 % y = [Position.signals.values(ind,:)'          % r_meas (3)
 %      PositionDot.signals.values(ind,:)'       % rdot_meas (3)
+%      PositionDotDot.signals.values(ind,:)'    % rdotdot_meas (3)
 %      0];                                      % delta, forcing perp., always 0
     
 input = [us_vec(1);F_T_vec(1)];
@@ -55,9 +59,10 @@ xhatV = zeros(N, n);                            % Logging estimate
 zhatV_norm = zeros(N,1);
 
 for ind=1:N
-  y = [Position.signals.values(ind,:)';% + 0.5*[rand,rand,rand]';         % r_meas
-       PositionDot.signals.values(ind,:)';% + 0.5*[rand,rand,rand]'       % rdot_meas
-       0];                                                              % delta
+  y = [Position.signals.values(ind,:)';% + 0.5*[rand,rand,rand]';        % r_meas
+       PositionDot.signals.values(ind,:)';% + 0.5*[rand,rand,rand]';     % rdot_meas
+       PositionDotDot.signals.values(ind,:)';% + 0.5*[rand,rand,rand]';    % rdotdot_meas
+       0];                                                               % delta
   [x, P,zhat] = StepEKF(f,x,P,h,y,Q,R, diffStepSize, [us_vec(ind);F_T_vec(ind)]);   % ekf
   xhatV(ind,:)= x;                                % Save Estimate
   zhatV_norm(ind)= norm(zhat);
