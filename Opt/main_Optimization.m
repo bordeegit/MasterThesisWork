@@ -23,8 +23,9 @@ parameters.Cl           = Cl.signals.values(1);
 parameters.Cd           = Cd.signals.values(1);
 N_opt                   = 500; % Number of steps to perform optimization
 W0_vec                  = [z0(1:3)';zeros(N_opt-1, 3)];
-parameters.Q            = 1e6*diag(ones(3,1));
-parameters.Qw           = 1e3*diag(ones(6,1));
+parameters.Q            = 1e4*diag(ones(3,1));
+parameters.Qw           = 1e4*diag(ones(6,1));
+parameters.gamma        = 1e7;
 parameters.zold         = z0;
 parameters.deltaNorm    = 0.01;   % Delta for Zl nonlin. ineq. constrain
 parameters.deltaOrth    = 0.1;   % Delta for Zl*wa nonlin. ineq. constrain
@@ -46,7 +47,7 @@ d = [-15;-10; zeros(4,1);
 
 % Numbers of nonlinera constraints
 p = 0;
-q = 4+4;
+q = 2;
 
 % Optimization Options
 myoptions               = myoptimset;
@@ -57,7 +58,7 @@ myoptions.tolgrad    	= 1e-6;               %default : 1e-6
 myoptions.tolfun        = 1e-12;              %default : 1e-12  
 myoptions.ls_beta       = 0.2;%0.2;                %default : 0.8       
 myoptions.ls_c          = 0.1;                %default : 0.1
-myoptions.ls_nitermax   = 20; %100                %default : 20
+myoptions.ls_nitermax   = 100; %100                %default : 20
 myoptions.nitermax      = 100; %200;                %default : 50
 myoptions.xsequence 	= 'off';
 myoptions.display       = 'off';  % or Iter
@@ -71,7 +72,7 @@ codegen Wind_cost_GN -args {z0,parameters} -lang:c++
 tic
 for i=2:N_opt
     [zstar,fxstar,k,exitflag,~] = myfmincon(@(z)Wind_cost_mex(z,parameters),z0,A,b,C,d,p,q,myoptions);
-    %z0                      = zstar;
+    z0                      = zstar;
     parameters.r_meas       = Position.signals.values(i,:)';
     parameters.rd_meas      = PositionDot.signals.values(i,:)';
     parameters.rdd_meas     = PositionDotDot.signals.values(i,:)';

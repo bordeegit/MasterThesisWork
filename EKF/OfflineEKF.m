@@ -10,14 +10,14 @@ end
 
 %% EKF Parameters and Execution
 
-diffStepSize = 1e-7;                            % Differentiation Step Size
+diffStepSize = 1e-5;                            % Differentiation Step Size
 %Q = diag(0.1*ones(16,1));
 Q = diag([1, 1, 1, 5, 5, 5, 30, 30, 30, ... %Q(r,rd,rdd)
-          5, 1, 3e+06, 1.e+07, 1.6e+06, 10000, 0.1]);        %Q(wn,F_L,F_D,cu)
+          5, 5, 1000, 1000, 1000, 5, 0.1]);        %Q(wn,F_L,F_D,cu)
           
 R = diag([0.001, 0.001, 0.001, 0.001, 0.001, 0.001, ...  %R(r,rd)
           0.001, 0.001, 0.001, 1e-15]);                  %R(rdd,delta)
-R = diag(0.0001*ones(10,1));  
+%R = diag(0.0001*ones(10,1));  
 
 % initial state vector x0 (16)
 x = [0.5*Position.signals.values(1,:)'          % r
