@@ -15,8 +15,8 @@ function [ftot] = Wind_cost(z,p)
     rdd = (Fl + Fd + Fg - Ft)/m;
 
     F = [p.Q*(p.rdd_meas-rdd);
-         p.Qw*zdiff;
-         p.gamma*(z(4)*wa(1)+z(5)*wa(2)+z(6)*wa(3))];  % should be the same of 2-norm squared
+         p.Qw*zdiff];
+         %p.gamma*(z(4)*wa(1)+z(5)*wa(2)+z(6)*wa(3))];  % should be the same of 2-norm squared
 
     ftot = F'*F;
 end
