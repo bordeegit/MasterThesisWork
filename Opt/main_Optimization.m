@@ -9,12 +9,16 @@ parameters.g = g;
 parameters.Cl           = mean(Cl.signals.values);
 parameters.Cd           = mean(Cd.signals.values);
 
+% Need these for codegen
+parameters.r_meas       = Position.signals.values(1,:)';
 parameters.rd_meas      = PositionDot.signals.values(1,:)';
+parameters.rdd_meas     = PositionDotDot.signals.values(1,:)';
+parameters.F_T_norm     = Forces.signals.values(1,end);
 
 
 % Simulation/Optimization Parameters
 
-N_start                 = 2001;
+N_start                 = 1;
 N_opt                   = 500; % Number of steps to perform optimization
 
 z0                      = [W_log.signals.values(N_start,:)';
@@ -25,16 +29,16 @@ Nop                     = size(z0,1);
 
 N_end                   = N_start+N_opt-1;
 W0_vec                  = [zeros(N_opt,3)];
-parameters.Q            = 1e4*diag(ones(3,1));
-parameters.Qw           = 1e6*diag(ones(6,1));
-parameters.gamma        = 1e1;
+parameters.Q            = 5e2*diag(ones(3,1));
+parameters.Qw           = 1e7*diag(ones(6,1));
+%parameters.gamma        = 1e4;
 parameters.zold         = z0;
 
-% Linear Inequalities
+% Linear Inequality Constraints
 A = [];
 b = [];
 
-% Equality Constaints (W_z = 0)
+% Linear Equality Constaints (W_z = 0)
 Aeq = zeros(Nop,Nop);
 Aeq(3,3) = 1;
 beq = zeros(Nop,1);
@@ -45,23 +49,23 @@ ub = [15;10;Inf;Inf;Inf;Inf];
 
 
 % Optimization Options
-options                         = optimoptions('fmincon');
-options.Algorithm               = 'sqp';
-options.FiniteDifferenceType    = 'forward';
-options.Display                 = 'off';
+options                             = optimoptions('fmincon');
+options.Algorithm                   = 'sqp';
+options.FiniteDifferenceType        = 'forward';
+options.Display                     = 'off';
 
-options.StepTolerance           = 1e-8;
-options.ConstraintTolerance     = 1e-8;
-options.OptimalityTolerance     = 1e-8;
-options.ConstraintTolerance     = 1e-8;
-options.MaxIterations           = 500;
-options.MaxFunctionEvaluations  = 5000; 
-options.GradConstr              = 'on';
+options.StepTolerance               = 1e-10;
+options.ConstraintTolerance         = 1e-10;
+options.OptimalityTolerance         = 1e-10;
+options.ConstraintTolerance         = 1e-10;
+options.MaxIterations               = 500;
+options.MaxFunctionEvaluations      = 5000; 
+options.SpecifyConstraintGradient   = true;
+%options.CheckGradients              = true;
+options.SpecifyObjectiveGradient    = true;
 
 codegen Wind_cost -args {z0,parameters} -lang:c++
 codegen normconstr -args {z0, parameters.rd_meas} -lang:c++
-
-% Nonlinear Constrains
 
 
 tic
@@ -73,7 +77,7 @@ for i = N_start:N_end
 
     nonlcon = @(z)normconstr_mex(z, parameters.rd_meas);
     fun = @(z)Wind_cost_mex(z,parameters);
-    [zstar,~,exitflag,out] = fmincon(fun,z0,[],[],Aeq,beq,lb,ub,nonlcon,options);
+    [zstar,~,exitflag,out] = fmincon(fun,z0,A,b,Aeq,beq,lb,ub,nonlcon,options);
     z0                      = zstar;
     W0_vec(i-N_start+1,:)   = zstar(1:3)';
     parameters.zold         = zstar;
