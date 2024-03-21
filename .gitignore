@@ -2,8 +2,8 @@
 /slprj
 /codegen
 /Examples
+/Images
 *.mexw64
 *.asv
 *.pdf
 *.png
-*.mat

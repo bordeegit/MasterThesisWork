@@ -1,7 +1,7 @@
 close all 
 clearvars -except parameters Cd_mod Cd_mean RMSE_cell W0_cell iter
 
-load FlightData.mat
+load FlightData/After30.mat
 
 % Structural Parameters
 parameters.rho = rho;
@@ -23,7 +23,7 @@ parameters.F_T_norm     = Forces.signals.values(1,end);
 % Simulation/Optimization Parameters
 
 N_start                 = 1;
-N_opt                   = 2500; % Number of steps to perform optimization
+N_opt                   = 6000; % Number of steps to perform optimization
 printFlag               = true;
 codegenFlag             = false;
 
@@ -58,7 +58,7 @@ ub = [15;10;Inf;Inf;Inf;Inf];
 options                             = optimoptions('fmincon');
 options.Algorithm                   = 'sqp';
 options.FiniteDifferenceType        = 'forward';
-options.Display                     = 'iter';
+options.Display                     = 'off';
 
 options.StepTolerance               = 1e-10;
 options.ConstraintTolerance         = 1e-10;
@@ -87,7 +87,7 @@ for i = N_start:N_end
 
     nonlcon = @(z)normconstr_mex(z, parameters.rd_meas);
     fun = @(z)Wind_cost_mex(z,parameters);
-    [zstar,~,exitflag,out] = fmincon(fun,z0,A,b,Aeq,beq,[],[],nonlcon,options);
+    [zstar,~,exitflag,out] = fmincon(fun,z0,A,b,Aeq,beq,lb,ub,nonlcon,options);
     z0                      = zstar;
     W0_vec(i-N_start+1,:)   = zstar(1:3)';
     parameters.zold         = zstar;

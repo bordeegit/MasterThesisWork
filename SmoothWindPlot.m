@@ -77,8 +77,9 @@ for height = [10,15,20,25]
     xlabel('X (m)', Interpreter='latex');
     ylabel('Y (m)', Interpreter='latex');
     
-    ax = gca; 
-    exportgraphics(ax, append("cotour",num2str(desired_height),".png"));
+    ax = gca;
+    filename = fullfile('C:\Users\matte\OneDrive - Politecnico di Milano\Magistrale\TESI\Simplified Model\Images', append("cotour",num2str(desired_height),".png"));
+    exportgraphics(ax, filename);
 
 end
 
