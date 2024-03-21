@@ -22,7 +22,7 @@ function [ftot,gradtot] = Wind_cost(z,p)
 
     ftot = F'*F;
 
-    if nargout > 1 
+    if nargout > 1 % gradient required
         gradF = zeros(size(z,1),size(F,1));
         gradF(1,1) = -sqrt(p.Q(1,1))/m * (Flconst*z(4)*2*wa(1) + ...
             Fdconst*wa_norm + Fdconst*2*wa(1)^2/(2*wa_norm));

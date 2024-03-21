@@ -67,9 +67,12 @@ mt_noL = 0.25*n_line*Line_diameter^2*pi*Line_density;
 %     wr=4;
 
 %% NEW WIND MODEL
+
+z_scale = 0.7;
+
 %%% WRT Z %%%
 height_Data = [0 5 10 15 20 25 40 50];
-w_x_height_Data = [0 2 8 10 12 20 20 20];
+w_x_height_Data = [0 2 8 10 12 20 20 20]*z_scale;
 
 [xDataCurve, yDataCurve] = prepareCurveData( height_Data, w_x_height_Data );
 

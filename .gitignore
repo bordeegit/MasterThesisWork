@@ -4,3 +4,6 @@
 /Examples
 *.mexw64
 *.asv
+*.pdf
+*.png
+*.mat
