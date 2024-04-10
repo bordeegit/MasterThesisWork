@@ -11,7 +11,8 @@ function [ftot,gradtot] = Wind_cost(z,p)
     Fg = (p.mk + 0.5*p.mt_noL*L)*[0;0;-p.g];
     Ft = p.F_T_norm*p.r_meas/L;
     Fl = Flconst*wa_norm^2*z(4:6);
-    Fd = Fdconst*wa_norm^2*wa/wa_norm;
+    Fd = Fdconst*wa_norm*wa;
+    %Fd = Fdconst*wa_norm^2*wa/wa_norm;
     zdiff = z-p.zold;
     
     rdd = (Fl + Fd + Fg - Ft)/m;
