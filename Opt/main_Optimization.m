@@ -15,7 +15,7 @@ parameters.Cd           = mean(Cd.signals.values);
 parameters.Cl           = mean(Cl.signals.values);
 
 
-% Size Initialization for codegen
+% Size Initialization for codegen (Measurements)
 parameters.r_meas       = Position.signals.values(1,:)';
 parameters.rd_meas      = PositionDot.signals.values(1,:)';
 parameters.rdd_meas     = PositionDotDot.signals.values(1,:)';
@@ -25,22 +25,22 @@ parameters.F_T_norm     = Forces.signals.values(1,end);
 % Simulation/Optimization Parameters
 
 N_start                 = 1;
-N_opt                   = 5000; % Number of steps to perform optimization
+N_opt                   = 1000; % Number of steps to perform optimization
 printFlag               = true;
-codegenFlag             = false;
+codegenFlag             = true;
 
-z0                      = [14;5;0;%W_log.signals.values(N_start,:)';
-                           0.9; 0.1; sqrt(1-0.9^2-0.1^2)]; %1/sqrt(3)*ones(3,1)];
+z0                      = [14;5;%W_log.signals.values(N_start,:)';
+                           0.9; 0.1]; %1/sqrt(3)*ones(3,1)];
 %z0                      = [8;3;0; %W_log.signals.values(1,:)';
 %                           0.9; 0.1; sqrt(1-0.9^2-0.1^2)]; %1/sqrt(3)*ones(3,1)];
 Nop                     = size(z0,1);
 
 N_end                   = N_start+N_opt-1;
-W0_vec                  = zeros(N_opt,3);
+W0_vec                  = zeros(N_opt,Nop/2);
 zl_vec                  = zeros(N_opt,3);
 heights                 = zeros(N_opt,1);
-parameters.Q            = 5e2*diag(ones(3,1));
-parameters.Qw           = 1e7*diag(ones(6,1));
+parameters.Q            = 1e1*diag(ones(3,1));
+parameters.Qw           = 1e1*diag(ones(Nop,1));
 %parameters.gamma        = 1e4;
 parameters.zold         = z0;
 
@@ -54,8 +54,8 @@ Aeq = [];
 beq = [];
 
 % Bounds on W_x, W_y
-lb = [5;-2;0;-Inf;-Inf;-Inf];
-ub = [15;10;0;Inf;Inf;Inf];
+lb = [5;-2;-Inf;-Inf];
+ub = [15;10;Inf;Inf];
 
 
 % Optimization Options
@@ -65,13 +65,13 @@ options.FiniteDifferenceType        = 'forward';
 options.Display                     = 'off';
 
 options.StepTolerance               = 1e-10;
-options.OptimalityTolerance         = 1e-10;
-options.ConstraintTolerance         = 1e-10;
+options.OptimalityTolerance         = 1e-12;
+options.ConstraintTolerance         = 1e-12;
 options.MaxIterations               = 500;
 options.MaxFunctionEvaluations      = 5000; 
 options.SpecifyObjectiveGradient    = true;
 options.SpecifyConstraintGradient   = true;
-options.CheckGradients              = false;
+options.CheckGradients              = true;
 
 
 if codegenFlag
@@ -95,20 +95,21 @@ for i = N_start:N_end
     fun = @(z)Wind_cost_mex(z,parameters);
     [zstar,~,exitflag,out] = fmincon(fun,z0,A,b,Aeq,beq,lb,ub,nl_con,options);
     z0                      = zstar;
-    W0_vec(i-N_start+1,:)   = zstar(1:3)';
+    W0_vec(i-N_start+1,:)   = zstar(1:2)';
     heights(i-N_start+1,:)  = parameters.r_meas(3);
-    zl_vec(i-N_start+1,:)   = zstar(4:6)';
+    zl_z                    = 1-zstar(3)^2-zstar(4)^2;
+    zl_vec(i-N_start+1,:)   = [zstar(3:4)' zl_z];
     parameters.zold         = zstar;
     if printFlag
-        fprintf("Iteration %d done, Wind is [%7.4f %7.4f %7.4f], (norm %f), iter: %3d, feval: %3d, exit:%2d \n", ...
-            i, zstar(1), zstar(2), zstar(3), norm(zstar(4:6)), out.iterations, out.funcCount, exitflag);
+        fprintf("Iteration %d done, Wind is [%7.4f %7.4f], (norm %f), iter: %3d, feval: %3d, exit:%2d \n", ...
+            i, zstar(1), zstar(2), norm([zstar(3:4)' zl_z]), out.iterations, out.funcCount, exitflag);
     end
     %fprintf("Cd : %7.4f   Cl : %7.4f\n", parameters.Cl, parameters.Cd);
             
 end
 toc
 
-RMSE = rmse(W_log.signals.values(N_start:N_end,:), W0_vec(:,:));
+RMSE = rmse(W_log.signals.values(N_start:N_end,:), [W0_vec(:,:) zeros(size(W0_vec,1),1)]);
 fprintf("RMSE: %f, %f, %f, 2-norm: %f\n", RMSE, norm(RMSE));
 
 %% Printing results
@@ -134,50 +135,51 @@ title('$W_y$', 'Interpreter','latex');
 legend('Actual $W_y$','Estimated $W_y$', 'Interpreter', 'latex');
 fig2 = gca;
 
-% Difference in Norm between estimated and actual wind
-figure(3)
-plot(Xtime, vecnorm(W_log.signals.values(N_start:N_end,:)'), '--'), hold on
-plot(Xtime, vecnorm(W0_vec')), hold off
-xlabel('Time (s)','Interpreter','latex');
-title('Wind Norm', 'Interpreter','latex');
-legend('Actual $|W|$','Estimated $|W|$', 'Interpreter', 'latex');
+% % Difference in Norm between estimated and actual wind
+% figure(3)
+% plot(Xtime, vecnorm(W_log.signals.values(N_start:N_end,1:2)'), '--'), hold on
+% plot(Xtime, vecnorm(W0_vec')), hold off
+% xlabel('Time (s)','Interpreter','latex');
+% title('Wind Norm', 'Interpreter','latex');
+% legend('Actual $|W|$','Estimated $|W|$', 'Interpreter', 'latex');
 
-% 3D Position of trajectory
-figure(4),
-plot3(Position.signals.values(:,1),Position.signals.values(:,2),Position.signals.values(:,3),'k'),grid on,hold on
-plot3(0,0,0,'k*')
-plot3([0, Position.signals.values(end,1)],...
-     [0, Position.signals.values(end,2)],...
-     [0, Position.signals.values(end,3)], 'm-o')
-xlabel('X (m)'), ylabel('Y (m)'), zlabel('Z (m)'),
-%indices = find(W0_vec(:,2) > 3.2 | W0_vec(:,2) < -1.3);
-%indices = indices(indices > 2000);
-%test = Position.signals.values(indices,:);
-%plot3(test(:,1),test(:,2),test(:,3),'or'); hold off
-ind_pos = find(W0_vec(:,2) > 3.2);
-ind_neg = find(W0_vec(:,2) < -1.3);
-ind_pos = ind_pos(ind_pos > 2000);
-ind_neg = ind_neg(ind_neg > 2000);
-test_pos = Position.signals.values(ind_pos,:);
-test_neg = Position.signals.values(ind_neg,:);
-plot3(test_pos(:,1),test_pos(:,2),test_pos(:,3),'or'); 
-plot3(test_neg(:,1),test_neg(:,2),test_neg(:,3),'ob');
-hold off
-
-% Euclidean distance between Lift estimated and actual direction
-figure(5);
-Fl = Forces.signals.values(N_start:N_opt, 4:6);
-zl_distance = zeros(N_opt);
-for i = 1:N_opt
-    zl_distance(i) = norm(Fl(i,:)/norm(Fl(i,:)) - zl_vec(i));
-end
-plot(Xtime, zl_distance)
-xlabel('Time (s)','Interpreter','latex');
-ylabel('Magnitude', 'Interpreter','latex');
-title('$z_l\: Euclidean\: Norm $', 'Interpreter','latex');
-
-
-printWindX;
+% 
+% % 3D Position of trajectory
+% figure(4),
+% plot3(Position.signals.values(:,1),Position.signals.values(:,2),Position.signals.values(:,3),'k'),grid on,hold on
+% plot3(0,0,0,'k*')
+% plot3([0, Position.signals.values(end,1)],...
+%      [0, Position.signals.values(end,2)],...
+%      [0, Position.signals.values(end,3)], 'm-o')
+% xlabel('X (m)'), ylabel('Y (m)'), zlabel('Z (m)'),
+% %indices = find(W0_vec(:,2) > 3.2 | W0_vec(:,2) < -1.3);
+% %indices = indices(indices > 2000);
+% %test = Position.signals.values(indices,:);
+% %plot3(test(:,1),test(:,2),test(:,3),'or'); hold off
+% ind_pos = find(W0_vec(:,2) > 3.2);
+% ind_neg = find(W0_vec(:,2) < -1.3);
+% ind_pos = ind_pos(ind_pos > 2000);
+% ind_neg = ind_neg(ind_neg > 2000);
+% test_pos = Position.signals.values(ind_pos,:);
+% test_neg = Position.signals.values(ind_neg,:);
+% plot3(test_pos(:,1),test_pos(:,2),test_pos(:,3),'or'); 
+% plot3(test_neg(:,1),test_neg(:,2),test_neg(:,3),'ob');
+% hold off
+% 
+% % Euclidean distance between Lift estimated and actual direction
+% figure(5);
+% Fl = Forces.signals.values(N_start:N_opt, 4:6);
+% zl_distance = zeros(N_opt);
+% for i = 1:N_opt
+%     zl_distance(i) = norm(Fl(i,:)/norm(Fl(i,:)) - zl_vec(i));
+% end
+% plot(Xtime, zl_distance)
+% xlabel('Time (s)','Interpreter','latex');
+% ylabel('Magnitude', 'Interpreter','latex');
+% title('$z_l\: Euclidean\: Norm $', 'Interpreter','latex');
+% 
+% 
+% printWindX;
 
 % zl_vec = Forces.signals.values(N_start:N_end,4:6)/norm(Forces.signals.values(N_start:N_end,4:6));
 % figure(5);
