@@ -25,7 +25,7 @@ parameters.F_T_norm     = Forces.signals.values(1,end);
 % Simulation/Optimization Parameters
 
 N_start                 = 1;
-N_opt                   = 3000; % Number of steps to perform optimization
+N_opt                   = 5000; % Number of steps to perform optimization
 printFlag               = true;
 codegenFlag             = false;
 
