@@ -1,5 +1,5 @@
 close all 
-clear
+%clear
 % Used for Hyperparameters optimization, remove clear before
 %clearvars -except parameters Cd_mod Cd_mean RMSE_cell W0_cell iter
 
@@ -37,6 +37,7 @@ Nop                     = size(z0,1);
 
 N_end                   = N_start+N_opt-1;
 W0_vec                  = zeros(N_opt,3);
+zl_vec                  = zeros(N_opt,3);
 parameters.Q            = 5e2*diag(ones(3,1));
 parameters.Qw           = 1e7*diag(ones(6,1));
 %parameters.gamma        = 1e4;
@@ -77,6 +78,8 @@ if codegenFlag
     codegen normconstr -args {z0, parameters.rd_meas} -lang:c++
 end
 
+% Filtering AoA
+%filteredAlpha = medfilt1(alpha.signals.values,10);
 
 tic
 for i = N_start:N_end
@@ -84,19 +87,21 @@ for i = N_start:N_end
     parameters.rd_meas      = PositionDot.signals.values(i,:)';
     parameters.rdd_meas     = PositionDotDot.signals.values(i,:)';
     parameters.F_T_norm     = Forces.signals.values(i,end);
-    %parameters.Cl           = Cl.signals.values(i);
-    %parameters.Cd           = Cd.signals.values(i);
+    %parameters.Cl           = interp1(alpha_var,CL_var,filteredAlpha(i),'spline','extrap');
+    %parameters.Cd           = interp1(alpha_var,CD_var,filteredAlpha(i),'spline','extrap');
 
     nl_con = @(z)normconstr_mex(z, parameters.rd_meas);
     fun = @(z)Wind_cost_mex(z,parameters);
     [zstar,~,exitflag,out] = fmincon(fun,z0,A,b,Aeq,beq,lb,ub,nl_con,options);
     z0                      = zstar;
     W0_vec(i-N_start+1,:)   = zstar(1:3)';
+    zl_vec(i-N_start+1,:)   = zstar(4:6)';
     parameters.zold         = zstar;
     if printFlag
         fprintf("Iteration %d done, Wind is [%7.4f %7.4f %7.4f], (norm %f), iter: %3d, feval: %3d, exit:%2d \n", ...
-            i, zstar(1), zstar(2), zstar(3), norm([zstar(4) zstar(5) zstar(6)]), out.iterations, out.funcCount, exitflag);
+            i, zstar(1), zstar(2), zstar(3), norm(zstar(4:6)), out.iterations, out.funcCount, exitflag);
     end
+    %fprintf("Cd : %7.4f   Cl : %7.4f\n", parameters.Cl, parameters.Cd);
             
 end
 toc
@@ -108,7 +113,7 @@ fprintf("RMSE: %f, %f, %f, 2-norm: %f\n", RMSE, norm(RMSE));
 
 Xtime = (N_start:N_end)/100;
 
-% Difference in Magnitude in X direction
+% Difference in Wind Magnitude in X direction
 figure(1)
 plot(Xtime, W_log.signals.values(N_start:N_end,1), '--' , Xtime, W0_vec(:,1));
 xlabel('Time (s)','Interpreter','latex');
@@ -118,7 +123,7 @@ legend('Actual $W_x$','Estimated $W_x$', 'Interpreter', 'latex');
 ylim([6 16]);
 fig1 = gca;
 
-% Difference in Magnitude in Y direction
+% Difference in Wind Magnitude in Y direction
 figure(2)
 plot(Xtime, W_log.signals.values(N_start:N_end,2),'--' ,Xtime, W0_vec(:,2));
 xlabel('Time (s)','Interpreter','latex');
@@ -127,7 +132,7 @@ title('$W_y$', 'Interpreter','latex');
 legend('Actual $W_y$','Estimated $W_y$', 'Interpreter', 'latex');
 fig2 = gca;
 
-% Difference in Norm between estimated and actual
+% Difference in Norm between estimated and actual wind
 figure(3)
 plot(Xtime, vecnorm(W_log.signals.values(N_start:N_end,:)'), '--'), hold on
 plot(Xtime, vecnorm(W0_vec')), hold off
@@ -156,6 +161,31 @@ test_neg = Position.signals.values(ind_neg,:);
 plot3(test_pos(:,1),test_pos(:,2),test_pos(:,3),'or'); 
 plot3(test_neg(:,1),test_neg(:,2),test_neg(:,3),'ob');
 hold off
+
+% Euclidean distance between Lift estimated and actual direction
+figure(5);
+Fl = Forces.signals.values(N_start:N_opt, 4:6);
+zl_distance = zeros(N_opt);
+for i = 1:N_opt
+    zl_distance(i) = norm(Fl(i,:)/norm(Fl(i,:)) - zl_vec(i));
+end
+plot(Xtime, zl_distance)
+xlabel('Time (s)','Interpreter','latex');
+ylabel('Magnitude', 'Interpreter','latex');
+title('$z_l\: Euclidean\: Norm $', 'Interpreter','latex');
+
+
+printWindX;
+
+% zl_vec = Forces.signals.values(N_start:N_end,4:6)/norm(Forces.signals.values(N_start:N_end,4:6));
+% figure(5);
+% subplot(3,1,1);
+% plot(Xtime, Forces.signals.values(N_start:N_end,4), '--' , Xtime, zl_vec(:,1));
+% xlabel('Time (s)','Interpreter','latex');
+% ylabel('Speed (m/s)', 'Interpreter','latex');
+% title('$W_x$', 'Interpreter','latex');
+% legend('Actual $W_x$','Estimated $W_x$', 'Interpreter', 'latex');
+
 
 
 

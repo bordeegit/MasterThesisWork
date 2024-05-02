@@ -66,42 +66,49 @@ mt_noL = 0.25*n_line*Line_diameter^2*pi*Line_density;
 %     %   2.0 otherwise
 %     wr=4;
 
-%% NEW WIND MODEL
+%% WIND MODEL
 
-z_scale = 0.7;
-
-%%% WRT Z %%%
-height_Data = [0 5 10 15 20 25 40 50];
-w_x_height_Data = [0 2 8 10 12 20 20 20]*z_scale;
-
-[xDataCurve, yDataCurve] = prepareCurveData( height_Data, w_x_height_Data );
-
-% Set up fittype and options
-ft = fittype( 'smoothingspline' );
-opts = fitoptions( 'Method', 'SmoothingSpline' );
-opts.SmoothingParam = 0.8;
-
-% Fit model to data.
-[WxFunctionZ, ~] = fit( xDataCurve, yDataCurve, ft, opts );
+%%% Constant Wind %%%
+ConstWindX = 5;                                      % Wind dist. X
+ConstWindY = 0;                                      % Wind dist. Y
+ConstWindZ = 0;
 
 %%% WRT XY %%%
 x_pos_Data = [0,50,30,60,60,60,25,0,0,100,100,100,80];
 y_pos_Data = [0,10,-10,0,-50,50,0,-50,50,0,-50,50,-20];
 w_y_pos_Data = [0,10,5,0,0,0,0,0,0,0,0,0,-10];
 
-[xDataSurf, yDataSurf, zDataSurf] = prepareSurfaceData( x_pos_Data, y_pos_Data, w_y_pos_Data );
 
-% Fit model to data.
-[WyFunctionXY, ~] = fit( [xDataSurf, yDataSurf], zDataSurf, 'cubicinterp', 'Normalize', 'on' );
+%%% WRT Z %%%
+z_scale = 0.7;
+height_Data = [0 5 10 15 20 25 40 50];
+w_x_height_Data = [0 2 8 10 12 20 20 20];
 
-% Creating Function handles for simulink
-WxFncH = @(z)feval(WxFunctionZ,z);
-WyFncH = @(xy)feval(WyFunctionXY,xy);
+%% Curve Fitting Approach (Slow and useless)
+% [xDataCurve, yDataCurve] = prepareCurveData( height_Data, w_x_height_Data );
+% 
+% % Set up fittype and options
+% ft = fittype( 'smoothingspline' );
+% opts = fitoptions( 'Method', 'SmoothingSpline' );
+% opts.SmoothingParam = 0.8;
+% 
+% % Fit model to data.
+% [WxFunctionZ, ~] = fit( xDataCurve, yDataCurve, ft, opts );
+% 
+% %%% WRT XY %%%
+% x_pos_Data = [0,50,30,60,60,60,25,0,0,100,100,100,80];
+% y_pos_Data = [0,10,-10,0,-50,50,0,-50,50,0,-50,50,-20];
+% w_y_pos_Data = [0,10,5,0,0,0,0,0,0,0,0,0,-10];
+% 
+% [xDataSurf, yDataSurf, zDataSurf] = prepareSurfaceData( x_pos_Data, y_pos_Data, w_y_pos_Data );
+% 
+% % Fit model to data.
+% [WyFunctionXY, ~] = fit( [xDataSurf, yDataSurf], zDataSurf, 'cubicinterp', 'Normalize', 'on' );
+% 
+% % Creating Function handles for simulink
+% WxFncH = @(z)feval(WxFunctionZ,z);
+% WyFncH = @(xy)feval(WyFunctionXY,xy);
 
-%%% Constant Wind %%%
-ConstWindX = 5;                                      % Wind dist. X
-ConstWindY = 0;                                      % Wind dist. Y
-ConstWindZ = 0;                                      % Wind dist. Z
 
 %% CONTROL
 K_r= 1000;                                      % reeling control gain
