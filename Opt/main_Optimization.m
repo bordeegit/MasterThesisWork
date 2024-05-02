@@ -25,7 +25,7 @@ parameters.F_T_norm     = Forces.signals.values(1,end);
 % Simulation/Optimization Parameters
 
 N_start                 = 1;
-N_opt                   = 3000; % Number of steps to perform optimization
+N_opt                   = 2000; % Number of steps to perform optimization
 printFlag               = true;
 codegenFlag             = false;
 
@@ -38,6 +38,7 @@ Nop                     = size(z0,1);
 N_end                   = N_start+N_opt-1;
 W0_vec                  = zeros(N_opt,3);
 zl_vec                  = zeros(N_opt,3);
+heights                 = zeros(N_opt,1);
 parameters.Q            = 5e2*diag(ones(3,1));
 parameters.Qw           = 1e7*diag(ones(6,1));
 %parameters.gamma        = 1e4;
@@ -95,6 +96,7 @@ for i = N_start:N_end
     [zstar,~,exitflag,out] = fmincon(fun,z0,A,b,Aeq,beq,lb,ub,nl_con,options);
     z0                      = zstar;
     W0_vec(i-N_start+1,:)   = zstar(1:3)';
+    heights(i-N_start+1,:)  = parameters.r_meas(3);
     zl_vec(i-N_start+1,:)   = zstar(4:6)';
     parameters.zold         = zstar;
     if printFlag
