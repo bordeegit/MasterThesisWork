@@ -27,7 +27,7 @@ parameters.F_T_norm     = Forces.signals.values(1,end);
 N_start                 = 1;
 N_opt                   = 1000; % Number of steps to perform optimization
 printFlag               = true;
-codegenFlag             = true;
+codegenFlag             = false;
 
 z0                      = [14;5;%W_log.signals.values(N_start,:)';
                            0.9; 0.1]; %1/sqrt(3)*ones(3,1)];
@@ -39,8 +39,8 @@ N_end                   = N_start+N_opt-1;
 W0_vec                  = zeros(N_opt,Nop/2);
 zl_vec                  = zeros(N_opt,3);
 heights                 = zeros(N_opt,1);
-parameters.Q            = 1e1*diag(ones(3,1));
-parameters.Qw           = 1e1*diag(ones(Nop,1));
+parameters.Q            = 1e-1*diag(ones(3,1));
+parameters.Qw           = 1e-1*diag(ones(Nop,1));
 %parameters.gamma        = 1e4;
 parameters.zold         = z0;
 
@@ -61,7 +61,8 @@ ub = [15;10;Inf;Inf];
 % Optimization Options
 options                             = optimoptions('fmincon');
 options.Algorithm                   = 'sqp';
-options.FiniteDifferenceType        = 'forward';
+options.FiniteDifferenceType        = 'central';
+%options.FiniteDifferenceStepSize    = 1e-10;
 options.Display                     = 'off';
 
 options.StepTolerance               = 1e-10;
@@ -71,7 +72,7 @@ options.MaxIterations               = 500;
 options.MaxFunctionEvaluations      = 5000; 
 options.SpecifyObjectiveGradient    = true;
 options.SpecifyConstraintGradient   = true;
-options.CheckGradients              = true;
+options.CheckGradients              = false;
 
 
 if codegenFlag
@@ -81,6 +82,11 @@ end
 
 % Filtering AoA
 %filteredAlpha = medfilt1(alpha.signals.values,10);
+
+z0rand = randn(4,1);
+assert(all(checkGradients(@(z)normconstr(z, parameters.rd_meas), z0rand, options, IsConstraint=true, Display="on")))
+assert(checkGradients(@(z)Wind_cost(z, parameters), z0rand, options, Display="on", Tolerance=1e-5))
+
 
 tic
 for i = N_start:N_end
@@ -101,8 +107,8 @@ for i = N_start:N_end
     zl_vec(i-N_start+1,:)   = [zstar(3:4)' zl_z];
     parameters.zold         = zstar;
     if printFlag
-        fprintf("Iteration %d done, Wind is [%7.4f %7.4f], (norm %f), iter: %3d, feval: %3d, exit:%2d \n", ...
-            i, zstar(1), zstar(2), norm([zstar(3:4)' zl_z]), out.iterations, out.funcCount, exitflag);
+        fprintf("Iteration %d done, Wind is [%7.4f %7.4f], iter: %3d, feval: %3d, exit:%2d \n", ...
+            i, zstar(1), zstar(2), out.iterations, out.funcCount, exitflag);
     end
     %fprintf("Cd : %7.4f   Cl : %7.4f\n", parameters.Cl, parameters.Cd);
             
@@ -123,7 +129,7 @@ xlabel('Time (s)','Interpreter','latex');
 ylabel('Speed (m/s)', 'Interpreter','latex');
 title('$W_x$', 'Interpreter','latex');
 legend('Actual $W_x$','Estimated $W_x$', 'Interpreter', 'latex');
-ylim([6 16]);
+ylim([4 16]);
 fig1 = gca;
 
 % Difference in Wind Magnitude in Y direction
@@ -133,6 +139,7 @@ xlabel('Time (s)','Interpreter','latex');
 ylabel('Speed (m/s)', 'Interpreter','latex');
 title('$W_y$', 'Interpreter','latex');
 legend('Actual $W_y$','Estimated $W_y$', 'Interpreter', 'latex');
+ylim([-3 11]);
 fig2 = gca;
 
 % % Difference in Norm between estimated and actual wind
@@ -165,22 +172,25 @@ fig2 = gca;
 % plot3(test_pos(:,1),test_pos(:,2),test_pos(:,3),'or'); 
 % plot3(test_neg(:,1),test_neg(:,2),test_neg(:,3),'ob');
 % hold off
-% 
-% % Euclidean distance between Lift estimated and actual direction
-% figure(5);
-% Fl = Forces.signals.values(N_start:N_opt, 4:6);
-% zl_distance = zeros(N_opt);
-% for i = 1:N_opt
-%     zl_distance(i) = norm(Fl(i,:)/norm(Fl(i,:)) - zl_vec(i));
-% end
-% plot(Xtime, zl_distance)
-% xlabel('Time (s)','Interpreter','latex');
-% ylabel('Magnitude', 'Interpreter','latex');
-% title('$z_l\: Euclidean\: Norm $', 'Interpreter','latex');
-% 
-% 
+
+
+% Dot Product between Lift estimated and actual direction
+% 1 if parallel (aligned), 0 if normal, -1 if antiparallel
+figure(5);
+Fl = Forces.signals.values(N_start:N_opt, 4:6);
+zl_dot = zeros(N_opt,1);
+for i = 1:N_opt
+    zl_dot(i) = dot(Fl(i,:)/norm(Fl(i,:)),zl_vec(i,:));
+end
+plot(Xtime, zl_dot)
+xlabel('Time (s)','Interpreter','latex');
+ylabel('Magnitude', 'Interpreter','latex');
+title('$z_l\: Dot\: Product $', 'Interpreter','latex');
+
+
 % printWindX;
 
+% Difference 
 % zl_vec = Forces.signals.values(N_start:N_end,4:6)/norm(Forces.signals.values(N_start:N_end,4:6));
 % figure(5);
 % subplot(3,1,1);
