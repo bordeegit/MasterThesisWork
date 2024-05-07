@@ -3,7 +3,7 @@ close all
 % Used for Hyperparameters optimization, remove clear before
 %clearvars -except parameters Cd_mod Cd_mean RMSE_cell W0_cell iter
 
-load FlightData/Standard.mat
+%load FlightData/Standard.mat
 
 % Structural Parameters
 parameters.rho = rho;
@@ -40,16 +40,13 @@ W0_vec                  = zeros(N_opt,Nop/2);
 zl_vec                  = zeros(N_opt,3);
 heights                 = zeros(N_opt,1);
 parameters.Q            = 1e-1*diag(ones(3,1));
-parameters.Qw           = 1e-1*diag(ones(Nop,1));
+parameters.Qw           = 1e3*diag(ones(Nop,1));
 %parameters.gamma        = 1e4;
 parameters.zold         = z0;
 
-% Linear Inequality Constraints
+% Linear Equality/Inequality Constraints (Empty)
 A = [];
 b = [];
-
-% Linear Equality Constaints (W_z = 0)
-%Useless to use this kind of constraint, moved it to bound (more efficient)
 Aeq = [];
 beq = [];
 
@@ -62,7 +59,6 @@ ub = [15;10;Inf;Inf];
 options                             = optimoptions('fmincon');
 options.Algorithm                   = 'sqp';
 options.FiniteDifferenceType        = 'central';
-%options.FiniteDifferenceStepSize    = 1e-10;
 options.Display                     = 'off';
 
 options.StepTolerance               = 1e-10;
@@ -100,7 +96,7 @@ for i = N_start:N_end
     nl_con = @(z)normconstr_mex(z, parameters.rd_meas);
     fun = @(z)Wind_cost_mex(z,parameters);
     [zstar,~,exitflag,out] = fmincon(fun,z0,A,b,Aeq,beq,lb,ub,nl_con,options);
-    z0                      = zstar;
+    %z0                      = zstar;
     W0_vec(i-N_start+1,:)   = zstar(1:2)';
     heights(i-N_start+1,:)  = parameters.r_meas(3);
     zl_z                    = 1-zstar(3)^2-zstar(4)^2;
@@ -176,30 +172,19 @@ fig2 = gca;
 
 % Dot Product between Lift estimated and actual direction
 % 1 if parallel (aligned), 0 if normal, -1 if antiparallel
-figure(5);
-Fl = Forces.signals.values(N_start:N_opt, 4:6);
-zl_dot = zeros(N_opt,1);
-for i = 1:N_opt
-    zl_dot(i) = dot(Fl(i,:)/norm(Fl(i,:)),zl_vec(i,:));
-end
-plot(Xtime, zl_dot)
-xlabel('Time (s)','Interpreter','latex');
-ylabel('Magnitude', 'Interpreter','latex');
-title('$z_l\: Dot\: Product $', 'Interpreter','latex');
+% figure(5);
+% Fl = Forces.signals.values(N_start:N_opt, 4:6);
+% zl_dot = zeros(N_opt,1);
+% for i = 1:N_opt
+%     zl_dot(i) = dot(Fl(i,:)/norm(Fl(i,:)),zl_vec(i,:));
+% end
+% plot(Xtime, zl_dot)
+% xlabel('Time (s)','Interpreter','latex');
+% ylabel('Magnitude', 'Interpreter','latex');
+% title('$z_l\: Dot\: Product $', 'Interpreter','latex');
 
 
 % printWindX;
-
-% Difference 
-% zl_vec = Forces.signals.values(N_start:N_end,4:6)/norm(Forces.signals.values(N_start:N_end,4:6));
-% figure(5);
-% subplot(3,1,1);
-% plot(Xtime, Forces.signals.values(N_start:N_end,4), '--' , Xtime, zl_vec(:,1));
-% xlabel('Time (s)','Interpreter','latex');
-% ylabel('Speed (m/s)', 'Interpreter','latex');
-% title('$W_x$', 'Interpreter','latex');
-% legend('Actual $W_x$','Estimated $W_x$', 'Interpreter', 'latex');
-
 
 
 
