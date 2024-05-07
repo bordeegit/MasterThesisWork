@@ -7,8 +7,8 @@ x_table = spline(height_Data,w_x_height_Data*z_scale, y_table);
 plot(x_table,y_table);
 
 % Estimated Wind Points
-Est_Wind_Height = [W0_vec, heights];
-Est_Wind_Height = sortrows(Est_Wind_Height, 3);
+Est_Wind_Height = [W0_vec(:,1:2), heights];
+Est_Wind_Height = sortrows(Est_Wind_Height, size(Est_Wind_Height,2));
 x_est = Est_Wind_Height(:,end);
 y_est = Est_Wind_Height(:,1);
 plot(y_est,x_est, 'o');
@@ -33,6 +33,6 @@ end
 errorbar(Est_WindX_meanstd(:,1),Est_WindX_meanstd(:,3), Est_WindX_meanstd(:,2), 'o-', "horizontal", 'Color', 'Black')
 
 title('Wind Profile');
-legend('','Input', 'Estimated', 'Real');
+legend('DataPts','Interp', 'Estimated', 'Real','Statistical', 'Location','northwest');
 
 
