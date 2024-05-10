@@ -27,7 +27,7 @@ parameters.F_T_norm     = Forces.signals.values(1,end);
 N_start                 = 1;
 N_opt                   = 5000; % Number of steps to perform optimization
 printFlag               = true;
-codegenFlag             = true;
+codegenFlag             = false;
 
 z0                      = [14;5;0;%W_log.signals.values(N_start,:)';
                            0.9; 0.1; sqrt(1-0.9^2-0.1^2)]; %1/sqrt(3)*ones(3,1)];
