@@ -43,7 +43,7 @@ function [ftot,gradtot] = Wind_cost(z,p)
             Fdconst*2*wa(3)*wa(2)/(2*wa_norm));
         gradF(5,3) = -sqrt(p.Q(3,3))/m * Flconst*wa_norm^2;
 
-        gradF(:,3:7) = sqrt(p.Qw);
+        gradF(:,4:8) = sqrt(p.Qw);
         gradtot = 2*gradF*F;
     end
 end

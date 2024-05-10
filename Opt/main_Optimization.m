@@ -36,7 +36,7 @@ z0                      = [14;5;%W_log.signals.values(N_start,1:2)';
 Nop                     = size(z0,1);
 
 N_end                   = N_start+N_opt-1;
-W0_vec                  = zeros(N_opt,2);
+W0_vec                  = zeros(N_opt,3);
 zl_vec                  = zeros(N_opt,3);
 heights                 = zeros(N_opt,1);
 parameters.Q            = 5e2*diag(ones(3,1));
@@ -81,9 +81,14 @@ end
 
 % Filtering AoA
 %filteredAlpha = medfilt1(alpha.signals.values,10);
-z0rand = randn(5,1);
-assert(checkGradients(@(z)Wind_cost(z, parameters), z0rand, options, Display="on", Tolerance=1e-5))
-assert(all(checkGradients(@(z)normconstr(z, parameters.rd_meas), z0rand, options, IsConstraint=true, Display="on")))
+
+% Check Derivatives
+if options.SpecifyObjectiveGradient
+    assert(checkGradients(@(z)Wind_cost(z, parameters), randn(5,1), options, Display="on"))
+end
+if options.SpecifyConstraintGradient
+    assert(all(checkGradients(@(z)normconstr(z, parameters.rd_meas), randn(5,1), options, IsConstraint=true, Display="on")))
+end
 
 
 tic
@@ -101,7 +106,7 @@ for i = N_start:N_end
     z0                      = zstar;
     W0_vec(i-N_start+1,:)   = [zstar(1:2)' 0];
     heights(i-N_start+1,:)  = parameters.r_meas(3);
-    zl_vec(i-N_start+1,:)   = zstar(4:6)';
+    zl_vec(i-N_start+1,:)   = zstar(3:5)';
     parameters.zold         = zstar;
     if printFlag
         fprintf("Iteration %d done, EstWind is [%7.4f %7.4f], (norm %f), iter: %3d, feval: %3d, exit:%2d \n", ...
