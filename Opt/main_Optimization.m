@@ -3,7 +3,7 @@ close all
 % Used for Hyperparameters optimization, remove clear before
 %clearvars -except parameters Cd_mod Cd_mean RMSE_cell W0_cell iter
 
-load FlightData/Standard.mat
+%load FlightData/Standard.mat
 
 % Structural Parameters
 parameters.rho = rho;
@@ -184,12 +184,13 @@ for i = 1:N_opt
     zl_dot(i) = dot(Fl(i,:)/norm(Fl(i,:)),zl_vec(i,:));
 end
 plot(Xtime, zl_dot)
-xlabel('Time (s)','Interpreter','latex');
-ylabel('Magnitude', 'Interpreter','latex');
+xlabel('Time (s)','Interpreter','latex'); 
+ylabel('Magnitude', 'Interpreter','latex'), ylim([0.95 1.05]);
 title('$z_l\: Dot\: Product $', 'Interpreter','latex');
 
 
 printWindX;
+printWindDir;
 
 % zl_vec = Forces.signals.values(N_start:N_end,4:6)/norm(Forces.signals.values(N_start:N_end,4:6));
 % figure(5);

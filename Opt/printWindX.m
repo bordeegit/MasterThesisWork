@@ -1,8 +1,8 @@
-figure;
+figure; grid on, hold on
 
 % Input Wind Profile, Interpolations
 y_table = 0:0.25:50;
-plot(w_x_height_Data*z_scale,height_Data, 'o'); hold on
+plot(w_x_height_Data*z_scale,height_Data, 'o');
 x_table = spline(height_Data,w_x_height_Data*z_scale, y_table);
 plot(x_table,y_table);
 
