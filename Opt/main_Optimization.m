@@ -27,20 +27,20 @@ parameters.F_T_norm     = Forces.signals.values(1,end);
 N_start                 = 1;
 N_opt                   = 5000; % Number of steps to perform optimization
 printFlag               = true;
-codegenFlag             = false;
+codegenFlag             = true;
 
-z0                      = [14;5;0;%W_log.signals.values(N_start,:)';
+z0                      = [14;5;%W_log.signals.values(N_start,1:2)';
                            0.9; 0.1; sqrt(1-0.9^2-0.1^2)]; %1/sqrt(3)*ones(3,1)];
 %z0                      = [8;3;0; %W_log.signals.values(1,:)';
 %                           0.9; 0.1; sqrt(1-0.9^2-0.1^2)]; %1/sqrt(3)*ones(3,1)];
 Nop                     = size(z0,1);
 
 N_end                   = N_start+N_opt-1;
-W0_vec                  = zeros(N_opt,3);
+W0_vec                  = zeros(N_opt,2);
 zl_vec                  = zeros(N_opt,3);
 heights                 = zeros(N_opt,1);
 parameters.Q            = 5e2*diag(ones(3,1));
-parameters.Qw           = 1e7*diag(ones(6,1));
+parameters.Qw           = 1e7*diag(ones(5,1));
 %parameters.gamma        = 1e4;
 parameters.zold         = z0;
 
@@ -53,9 +53,9 @@ b = [];
 Aeq = [];
 beq = [];
 
-% Bounds on W_x, W_y
-lb = [5;-2;0;-Inf;-Inf;-Inf];
-ub = [15;10;0;Inf;Inf;Inf];
+% Bounds on W_x, W_y (can also add bound on components of zl)
+lb = [5;-2;-1;-1;-1];
+ub = [15;10;1;1;1];
 
 
 % Optimization Options
@@ -82,6 +82,7 @@ end
 % Filtering AoA
 %filteredAlpha = medfilt1(alpha.signals.values,10);
 
+
 tic
 for i = N_start:N_end
     parameters.r_meas       = Position.signals.values(i,:)';
@@ -95,13 +96,13 @@ for i = N_start:N_end
     fun = @(z)Wind_cost_mex(z,parameters);
     [zstar,~,exitflag,out] = fmincon(fun,z0,A,b,Aeq,beq,lb,ub,nl_con,options);
     z0                      = zstar;
-    W0_vec(i-N_start+1,:)   = zstar(1:3)';
+    W0_vec(i-N_start+1,:)   = [zstar(1:2)' 0];
     heights(i-N_start+1,:)  = parameters.r_meas(3);
     zl_vec(i-N_start+1,:)   = zstar(4:6)';
     parameters.zold         = zstar;
     if printFlag
-        fprintf("Iteration %d done, Wind is [%7.4f %7.4f %7.4f], (norm %f), iter: %3d, feval: %3d, exit:%2d \n", ...
-            i, zstar(1), zstar(2), zstar(3), norm(zstar(4:6)), out.iterations, out.funcCount, exitflag);
+        fprintf("Iteration %d done, EstWind is [%7.4f %7.4f], (norm %f), iter: %3d, feval: %3d, exit:%2d \n", ...
+            i, zstar(1), zstar(2), norm(zstar(3:5)), out.iterations, out.funcCount, exitflag);
     end
     %fprintf("Cd : %7.4f   Cl : %7.4f\n", parameters.Cl, parameters.Cd);
             
