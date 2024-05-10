@@ -3,7 +3,7 @@ function [ftot,gradtot] = Wind_cost(z,p)
     
     L = norm(p.r_meas);
     m = p.mk + 0.25*p.mt_noL*L;
-    Fdconst = 0.5*p.rho*p.A*p.Cd;
+    Fdconst = 0.5*p.rho*p.A*p.Cd + 1/8*p.rho*p.Cd_l*p.d_l*p.n_l*L;
     Flconst = 0.5*p.rho*p.A*p.Cl;
 
     wa = [z(1:2);0] - p.rd_meas;

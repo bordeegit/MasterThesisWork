@@ -11,6 +11,9 @@ parameters.A = area;
 parameters.mk = mass;
 parameters.mt_noL = mt_noL;
 parameters.g = g;
+parameters.Cd_l         = CD_Line;
+parameters.d_l          = Line_diameter;
+parameters.n_l          = n_line;
 parameters.Cd           = mean(Cd.signals.values);
 parameters.Cl           = mean(Cl.signals.values);
 
@@ -25,9 +28,9 @@ parameters.F_T_norm     = Forces.signals.values(1,end);
 % Simulation/Optimization Parameters
 
 N_start                 = 1;
-N_opt                   = 5000; % Number of steps to perform optimization
+N_opt                   = 2500; % Number of steps to perform optimization
 printFlag               = true;
-codegenFlag             = true;
+codegenFlag             = false;
 
 z0                      = [14;5;%W_log.signals.values(N_start,1:2)';
                            0.9; 0.1; sqrt(1-0.9^2-0.1^2)]; %1/sqrt(3)*ones(3,1)];
@@ -39,8 +42,8 @@ N_end                   = N_start+N_opt-1;
 W0_vec                  = zeros(N_opt,3);
 zl_vec                  = zeros(N_opt,3);
 heights                 = zeros(N_opt,1);
-parameters.Q            = 5e2*diag(ones(3,1));
-parameters.Qw           = 1e7*diag(ones(5,1));
+parameters.Q            = 2e1*diag(ones(3,1)); %5e2
+parameters.Qw           = 1e5*diag(ones(5,1)); %1e7
 %parameters.gamma        = 1e4;
 parameters.zold         = z0;
 
@@ -144,46 +147,46 @@ legend('Actual $W_y$','Estimated $W_y$', 'Interpreter', 'latex');
 fig2 = gca;
 
 % Difference in Norm between estimated and actual wind
-figure(3)
-plot(Xtime, vecnorm(W_log.signals.values(N_start:N_end,:)'), '--'), hold on
-plot(Xtime, vecnorm(W0_vec')), hold off
-xlabel('Time (s)','Interpreter','latex');
-title('Wind Norm', 'Interpreter','latex');
-legend('Actual $|W|$','Estimated $|W|$', 'Interpreter', 'latex');
+% figure(3)
+% plot(Xtime, vecnorm(W_log.signals.values(N_start:N_end,:)'), '--'), hold on
+% plot(Xtime, vecnorm(W0_vec')), hold off
+% xlabel('Time (s)','Interpreter','latex');
+% title('Wind Norm', 'Interpreter','latex');
+% legend('Actual $|W|$','Estimated $|W|$', 'Interpreter', 'latex');
 
 % 3D Position of trajectory
-figure(4),
-plot3(Position.signals.values(:,1),Position.signals.values(:,2),Position.signals.values(:,3),'k'),grid on,hold on
-plot3(0,0,0,'k*')
-plot3([0, Position.signals.values(end,1)],...
-     [0, Position.signals.values(end,2)],...
-     [0, Position.signals.values(end,3)], 'm-o')
-xlabel('X (m)'), ylabel('Y (m)'), zlabel('Z (m)'),
-%indices = find(W0_vec(:,2) > 3.2 | W0_vec(:,2) < -1.3);
-%indices = indices(indices > 2000);
-%test = Position.signals.values(indices,:);
-%plot3(test(:,1),test(:,2),test(:,3),'or'); hold off
-ind_pos = find(W0_vec(:,2) > 3.2);
-ind_neg = find(W0_vec(:,2) < -1.3);
-ind_pos = ind_pos(ind_pos > 2000);
-ind_neg = ind_neg(ind_neg > 2000);
-test_pos = Position.signals.values(ind_pos,:);
-test_neg = Position.signals.values(ind_neg,:);
-plot3(test_pos(:,1),test_pos(:,2),test_pos(:,3),'or'); 
-plot3(test_neg(:,1),test_neg(:,2),test_neg(:,3),'ob');
-hold off
+% figure(4),
+% plot3(Position.signals.values(:,1),Position.signals.values(:,2),Position.signals.values(:,3),'k'),grid on,hold on
+% plot3(0,0,0,'k*')
+% plot3([0, Position.signals.values(end,1)],...
+%      [0, Position.signals.values(end,2)],...
+%      [0, Position.signals.values(end,3)], 'm-o')
+% xlabel('X (m)'), ylabel('Y (m)'), zlabel('Z (m)'),
+% %indices = find(W0_vec(:,2) > 3.2 | W0_vec(:,2) < -1.3);
+% %indices = indices(indices > 2000);
+% %test = Position.signals.values(indices,:);
+% %plot3(test(:,1),test(:,2),test(:,3),'or'); hold off
+% ind_pos = find(W0_vec(:,2) > 3.2);
+% ind_neg = find(W0_vec(:,2) < -1.3);
+% ind_pos = ind_pos(ind_pos > 2000);
+% ind_neg = ind_neg(ind_neg > 2000);
+% test_pos = Position.signals.values(ind_pos,:);
+% test_neg = Position.signals.values(ind_neg,:);
+% plot3(test_pos(:,1),test_pos(:,2),test_pos(:,3),'or'); 
+% plot3(test_neg(:,1),test_neg(:,2),test_neg(:,3),'ob');
+% hold off
 
 % Euclidean distance between Lift estimated and actual direction
 figure(5);
 Fl = Forces.signals.values(N_start:N_opt, 4:6);
-zl_distance = zeros(N_opt);
+zl_dot = zeros(N_opt,1);
 for i = 1:N_opt
-    zl_distance(i) = norm(Fl(i,:)/norm(Fl(i,:)) - zl_vec(i));
+    zl_dot(i) = dot(Fl(i,:)/norm(Fl(i,:)),zl_vec(i,:));
 end
-plot(Xtime, zl_distance)
+plot(Xtime, zl_dot)
 xlabel('Time (s)','Interpreter','latex');
 ylabel('Magnitude', 'Interpreter','latex');
-title('$z_l\: Euclidean\: Norm $', 'Interpreter','latex');
+title('$z_l\: Dot\: Product $', 'Interpreter','latex');
 
 
 printWindX;
