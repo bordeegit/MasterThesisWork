@@ -23,7 +23,7 @@ plot(y_act,x_act, 'o');
 % Statistical Analysis of the results
 % Divide the flown heights in segements, for each clamp the results to the
 % lower bound and compute mean and std
-segments = 10;
+segments = 20;
 ref_heights = linspace(min(heights), max(heights), segments+1);
 Est_WindX_meanstd = zeros(size(ref_heights,2)-1,3);
 for i = 1:size(ref_heights,2)-1

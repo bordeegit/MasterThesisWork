@@ -3,7 +3,7 @@ close all
 % Used for Hyperparameters optimization, remove clear before
 %clearvars -except parameters Cd_mod Cd_mean RMSE_cell W0_cell iter
 
-%load FlightData/Standard.mat
+load FlightData/Standard.mat
 
 % Structural Parameters
 parameters.rho = rho;
@@ -25,7 +25,7 @@ parameters.F_T_norm     = Forces.signals.values(1,end);
 % Simulation/Optimization Parameters
 
 N_start                 = 1;
-N_opt                   = 1000; % Number of steps to perform optimization
+N_opt                   = 3000; % Number of steps to perform optimization
 printFlag               = true;
 codegenFlag             = false;
 
@@ -43,6 +43,7 @@ parameters.Q            = 1e-1*diag(ones(3,1));
 parameters.Qw           = 1e3*diag(ones(Nop,1));
 %parameters.gamma        = 1e4;
 parameters.zold         = z0;
+fval                    = zeros(N_opt, 1);
 
 % Linear Equality/Inequality Constraints (Empty)
 A = [];
@@ -90,12 +91,14 @@ for i = N_start:N_end
     parameters.rd_meas      = PositionDot.signals.values(i,:)';
     parameters.rdd_meas     = PositionDotDot.signals.values(i,:)';
     parameters.F_T_norm     = Forces.signals.values(i,end);
+    parameters.Cl           = Cl.signals.values(i);
+    parameters.Cd           = Cd.signals.values(i);
     %parameters.Cl           = interp1(alpha_var,CL_var,filteredAlpha(i),'spline','extrap');
     %parameters.Cd           = interp1(alpha_var,CD_var,filteredAlpha(i),'spline','extrap');
 
     nl_con = @(z)normconstr_mex(z, parameters.rd_meas);
     fun = @(z)Wind_cost_mex(z,parameters);
-    [zstar,~,exitflag,out] = fmincon(fun,z0,A,b,Aeq,beq,lb,ub,nl_con,options);
+    [zstar,fval(i),exitflag,out] = fmincon(fun,z0,A,b,Aeq,beq,lb,ub,nl_con,options);
     %z0                      = zstar;
     W0_vec(i-N_start+1,:)   = zstar(1:2)';
     heights(i-N_start+1,:)  = parameters.r_meas(3);
@@ -170,21 +173,21 @@ fig2 = gca;
 % hold off
 
 
-% Dot Product between Lift estimated and actual direction
-% 1 if parallel (aligned), 0 if normal, -1 if antiparallel
-% figure(5);
-% Fl = Forces.signals.values(N_start:N_opt, 4:6);
-% zl_dot = zeros(N_opt,1);
-% for i = 1:N_opt
-%     zl_dot(i) = dot(Fl(i,:)/norm(Fl(i,:)),zl_vec(i,:));
-% end
-% plot(Xtime, zl_dot)
-% xlabel('Time (s)','Interpreter','latex');
-% ylabel('Magnitude', 'Interpreter','latex');
-% title('$z_l\: Dot\: Product $', 'Interpreter','latex');
+%Dot Product between Lift estimated and actual direction
+%1 if parallel (aligned), 0 if normal, -1 if antiparallel
+figure(5);
+Fl = Forces.signals.values(N_start:N_opt, 4:6);
+zl_dot = zeros(N_opt,1);
+for i = 1:N_opt
+    zl_dot(i) = dot(Fl(i,:)/norm(Fl(i,:)),zl_vec(i,:));
+end
+plot(Xtime, zl_dot)
+xlabel('Time (s)','Interpreter','latex');
+ylabel('Magnitude', 'Interpreter','latex');
+title('$z_l\: Dot\: Product $', 'Interpreter','latex');
 
 
-% printWindX;
+printWindX;
 
 
 
