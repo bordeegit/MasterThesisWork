@@ -61,7 +61,7 @@ ub = [15;10;1;1;1];
 % Optimization Options
 options                             = optimoptions('fmincon');
 options.Algorithm                   = 'sqp';
-options.FiniteDifferenceType        = 'forward';
+options.FiniteDifferenceType        = 'central';
 options.Display                     = 'off';
 
 options.StepTolerance               = 1e-10;
@@ -81,6 +81,9 @@ end
 
 % Filtering AoA
 %filteredAlpha = medfilt1(alpha.signals.values,10);
+z0rand = randn(5,1);
+assert(checkGradients(@(z)Wind_cost(z, parameters), z0rand, options, Display="on", Tolerance=1e-5))
+assert(all(checkGradients(@(z)normconstr(z, parameters.rd_meas), z0rand, options, IsConstraint=true, Display="on")))
 
 
 tic
