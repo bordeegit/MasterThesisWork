@@ -3,14 +3,14 @@ close all
 % Used for Hyperparameters optimization, remove clear before
 %clearvars -except parameters Cd_mod Cd_mean RMSE_cell W0_cell iter
 
-%load FlightData/Standard.mat
+%load FlightData/Standard_LinY.mat
 
 % Structural Parameters
-parameters.rho = rho;
-parameters.A = area;
-parameters.mk = mass;
-parameters.mt_noL = mt_noL;
-parameters.g = g;
+parameters.rho          = rho;
+parameters.A            = area;
+parameters.mk           = mass;
+parameters.mt_noL       = mt_noL;
+parameters.g            = g;
 parameters.Cd_l         = CD_Line;
 parameters.d_l          = Line_diameter;
 parameters.n_l          = n_line;
@@ -32,29 +32,23 @@ N_opt                   = 2500; % Number of steps to perform optimization
 printFlag               = true;
 codegenFlag             = false;
 
-z0                      = [14;5;%W_log.signals.values(N_start,1:2)';
-                           0.9; 0.1; sqrt(1-0.9^2-0.1^2)]; %1/sqrt(3)*ones(3,1)];
-%z0                      = [8;3;0; %W_log.signals.values(1,:)';
-%                           0.9; 0.1; sqrt(1-0.9^2-0.1^2)]; %1/sqrt(3)*ones(3,1)];
-Nop                     = size(z0,1);
+z0                      = [6;0;%W_log.signals.values(N_start,1:2)';
+                           0.9; 0.1; sqrt(1-0.9^2-0.1^2)];
 
+Nop                     = size(z0,1);
 N_end                   = N_start+N_opt-1;
 W0_vec                  = zeros(N_opt,3);
 zl_vec                  = zeros(N_opt,3);
 heights                 = zeros(N_opt,1);
-parameters.Q            = 2e1*diag(ones(3,1)); %5e2
-parameters.Qw           = 1e5*diag(ones(5,1)); %1e7
-%parameters.gamma        = 1e4;
+parameters.Q            = 5e2*diag(ones(3,1)); %5e2
+parameters.Qw           = 1e7*diag(ones(5,1)); %1e7
 parameters.zold         = z0;
 
-% Linear Inequality Constraints
-A = [];
-b = [];
-
-% Linear Equality Constaints (W_z = 0)
-%Useless to use this kind of constraint, moved it to bound (more efficient)
+% Linear Equality/Inequality Constraints
 Aeq = [];
 beq = [];
+A = [];
+b = [];
 
 % Bounds on W_x, W_y (can also add bound on components of zl)
 lb = [5;-2;-1;-1;-1];
@@ -112,7 +106,7 @@ for i = N_start:N_end
     zl_vec(i-N_start+1,:)   = zstar(3:5)';
     parameters.zold         = zstar;
     if printFlag
-        fprintf("Iteration %d done, EstWind is [%7.4f %7.4f], (norm %f), iter: %3d, feval: %3d, exit:%2d \n", ...
+        fprintf("Iteration %4d done, EstWind is [%7.4f %7.4f], (norm %4.3f), iter: %3d, feval: %3d, exit:%2d \n", ...
             i, zstar(1), zstar(2), norm(zstar(3:5)), out.iterations, out.funcCount, exitflag);
     end
     %fprintf("Cd : %7.4f   Cl : %7.4f\n", parameters.Cl, parameters.Cd);
@@ -127,24 +121,25 @@ fprintf("RMSE: %f, %f, %f, 2-norm: %f\n", RMSE, norm(RMSE));
 
 Xtime = (N_start:N_end)/100;
 
+f = figure;
 % Difference in Wind Magnitude in X direction
-figure(1)
+subplot(1,2,1)
 plot(Xtime, W_log.signals.values(N_start:N_end,1), '--' , Xtime, W0_vec(:,1));
-xlabel('Time (s)','Interpreter','latex');
+xlabel('Time (s)','Interpreter','latex'), grid on;
 ylabel('Speed (m/s)', 'Interpreter','latex');
 title('$W_x$', 'Interpreter','latex');
 legend('Actual $W_x$','Estimated $W_x$', 'Interpreter', 'latex');
-ylim([6 16]);
-fig1 = gca;
+ylim([6 16]), grid on;
 
 % Difference in Wind Magnitude in Y direction
-figure(2)
+subplot(1,2,2)
 plot(Xtime, W_log.signals.values(N_start:N_end,2),'--' ,Xtime, W0_vec(:,2));
 xlabel('Time (s)','Interpreter','latex');
 ylabel('Speed (m/s)', 'Interpreter','latex');
 title('$W_y$', 'Interpreter','latex');
 legend('Actual $W_y$','Estimated $W_y$', 'Interpreter', 'latex');
-fig2 = gca;
+ylim([-3 11]), grid on;
+f.Position = [300 300 1200 500];
 
 % Difference in Norm between estimated and actual wind
 % figure(3)
@@ -177,20 +172,23 @@ fig2 = gca;
 % hold off
 
 % Euclidean distance between Lift estimated and actual direction
-figure(5);
-Fl = Forces.signals.values(N_start:N_opt, 4:6);
+figure;
+Fl = Forces.signals.values(N_start:N_end, 4:6);
 zl_dot = zeros(N_opt,1);
-for i = 1:N_opt
-    zl_dot(i) = dot(Fl(i,:)/norm(Fl(i,:)),zl_vec(i,:));
+for i = N_start:N_end
+    zl_dot(i-N_start+1) = dot(Fl(i-N_start+1,:)/norm(Fl(i-N_start+1,:)),zl_vec(i-N_start+1,:));
 end
 plot(Xtime, zl_dot)
 xlabel('Time (s)','Interpreter','latex'); 
 ylabel('Magnitude', 'Interpreter','latex'), ylim([0.95 1.05]);
 title('$z_l\: Dot\: Product $', 'Interpreter','latex');
 
-
+f = figure;
+subplot(1,2,1);
 printWindX;
+subplot(1,2,2);
 printWindDir;
+f.Position = [400 200 1200 500];
 
 % zl_vec = Forces.signals.values(N_start:N_end,4:6)/norm(Forces.signals.values(N_start:N_end,4:6));
 % figure(5);

@@ -1,4 +1,4 @@
-figure; hold on, grid on
+hold on, grid on
 
 Est_Wind_Height = [W0_vec(:,1:2), heights];
 Est_Wind_Height = sortrows(Est_Wind_Height, size(Est_Wind_Height,2));
@@ -23,5 +23,6 @@ end
 errorbar(Est_WindDir_meanstd(:,1),Est_WindDir_meanstd(:,3), Est_WindDir_meanstd(:,2), 'o-', "horizontal",'Color', 'Black')
 
 xlabel("Wind Direction [deg]"), ylabel("Height [m]");
+xlim([-15 15]);
 title('Wind Direction Profile');
 legend('Estimated', 'Real','Statistical', 'Location','northwest');

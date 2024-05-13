@@ -1,4 +1,4 @@
-figure; grid on, hold on
+grid on, hold on
 
 % Input Wind Profile, Interpolations
 y_table = 0:0.25:50;
@@ -33,7 +33,7 @@ end
 errorbar(Est_WindX_meanstd(:,1),Est_WindX_meanstd(:,3), Est_WindX_meanstd(:,2), 'o-', "horizontal", 'Color', 'Black')
 
 ylim([10 30]), xlabel("Wind Speed [m/s]"), ylabel("Height [m]");
-title('Wind Profile');
+title('Wind Magnitude Profile');
 legend('DataPts','Interp', 'Estimated', 'Real','Statistical', 'Location','northwest');
 
 
