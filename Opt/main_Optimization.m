@@ -76,10 +76,7 @@ if codegenFlag
     codegen normconstr -args {z0, parameters.rd_meas} -lang:c++
 end
 
-% Filtering AoA
-%filteredAlpha = medfilt1(alpha.signals.values,10);
-
-% Check Derivatives
+% Check Derivatives (v2024 only)
 if options.SpecifyObjectiveGradient
     assert(checkGradients(@(z)Wind_cost(z, parameters), randn(5,1), options, Display="on"))
 end
@@ -94,8 +91,6 @@ for i = N_start:N_end
     parameters.rd_meas      = PositionDot.signals.values(i,:)';
     parameters.rdd_meas     = PositionDotDot.signals.values(i,:)';
     parameters.F_T_norm     = Forces.signals.values(i,end);
-    %parameters.Cl           = interp1(alpha_var,CL_var,filteredAlpha(i),'spline','extrap');
-    %parameters.Cd           = interp1(alpha_var,CD_var,filteredAlpha(i),'spline','extrap');
 
     nl_con = @(z)normconstr_mex(z, parameters.rd_meas);
     fun = @(z)Wind_cost_mex(z,parameters);
@@ -151,18 +146,16 @@ f.Position = [300 300 1200 500];
 
 % 3D Position of trajectory
 % figure(4),
-% plot3(Position.signals.values(:,1),Position.signals.values(:,2),Position.signals.values(:,3),'k'),grid on,hold on
-% plot3(0,0,0,'k*')
-% plot3([0, Position.signals.values(end,1)],...
-%      [0, Position.signals.values(end,2)],...
-%      [0, Position.signals.values(end,3)], 'm-o')
-% xlabel('X (m)'), ylabel('Y (m)'), zlabel('Z (m)'),
-% %indices = find(W0_vec(:,2) > 3.2 | W0_vec(:,2) < -1.3);
-% %indices = indices(indices > 2000);
-% %test = Position.signals.values(indices,:);
-% %plot3(test(:,1),test(:,2),test(:,3),'or'); hold off
+figure;
+plot3(Position.signals.values(:,1),Position.signals.values(:,2),Position.signals.values(:,3),'k'),grid on,hold on
+plot3(0,0,0,'k*')
+plot3([0, Position.signals.values(end,1)],...
+     [0, Position.signals.values(end,2)],...
+     [0, Position.signals.values(end,3)], 'm-o')
+xlabel('X (m)'), ylabel('Y (m)'), zlabel('Z (m)'), hold off
+%%% Finding where peaks are along the trajectory 
 % ind_pos = find(W0_vec(:,2) > 3.2);
-% ind_neg = find(W0_vec(:,2) < -1.3);
+% ind_neg = find(W0_vec(:,2) < -1.3);   
 % ind_pos = ind_pos(ind_pos > 2000);
 % ind_neg = ind_neg(ind_neg > 2000);
 % test_pos = Position.signals.values(ind_pos,:);
@@ -183,6 +176,9 @@ xlabel('Time (s)','Interpreter','latex');
 ylabel('Magnitude', 'Interpreter','latex'), ylim([0.95 1.05]);
 title('$z_l\: Dot\: Product $', 'Interpreter','latex');
 
+% Wind Profile 
+start_filter = 50;
+segments = 15;
 f = figure;
 subplot(1,2,1);
 printWindX;
