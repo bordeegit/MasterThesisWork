@@ -59,7 +59,7 @@ b = [];
 
 % Bounds on W_x, W_y (can also add bound on components of zl)
 lb = [5;-2;-1;-1;-1];
-ub = [15;10;1;1;1];
+ub = [15;20;1;1;1];
 
 
 % Optimization Options
@@ -92,19 +92,22 @@ if isMATLABReleaseOlderThan("R2024a")
     end
 end
 
+%Add noise to Measurements (0.01 = 1%)
+noiseLvl = 0.1;
+
 tic
 for i = N_start:N_end
-    parameters.r_meas       = Position.signals.values(i,:)';
-    parameters.rd_meas      = PositionDot.signals.values(i,:)';
-    parameters.rdd_meas     = PositionDotDot.signals.values(i,:)';
-    parameters.F_T_norm     = Forces.signals.values(i,end);
+    parameters.r_meas       = Position.signals.values(i,:)' + noiseLvl.*Position.signals.values(i,:)'.*randn(size(Position.signals.values(i,:)))';
+    parameters.rd_meas      = PositionDot.signals.values(i,:)' + noiseLvl.*PositionDot.signals.values(i,:)'.*randn(size(PositionDot.signals.values(i,:)))';
+    parameters.rdd_meas     = PositionDotDot.signals.values(i,:)' + noiseLvl.*PositionDotDot.signals.values(i,:)'.*randn(size(PositionDotDot.signals.values(i,:)))';
+    parameters.F_T_norm     = Forces.signals.values(i,end) + noiseLvl*Forces.signals.values(i,end)*randn(size(Forces.signals.values(i,end)));
 
     nl_con = @(z)normconstr_mex(z, parameters.rd_meas);
     fun = @(z)Wind_cost_mex(z,parameters);
     [zstar,~,exitflag,out] = fmincon(fun,z0,A,b,Aeq,beq,lb,ub,nl_con,options);
     z0                      = zstar;
     W0_vec(i-N_start+1,:)   = [zstar(1:2)' 0];
-    heights(i-N_start+1,:)  = parameters.r_meas(3);
+    heights(i-N_start+1,:)  = Position.signals.values(i,3);
     zl_vec(i-N_start+1,:)   = zstar(3:5)';
     parameters.zold         = zstar;
     if printFlag

@@ -1,8 +1,7 @@
 f = figure;
 grid on, hold on
 colormap(winter);
-speed = vecnorm(PositionDot.signals.values')';
-patch([Position.signals.values(:,1);nan],[Position.signals.values(:,2);nan],[Position.signals.values(:,3); nan],[speed; nan],'FaceColor','none','EdgeColor','interp','LineWidth', 1.5);
+patch([Position.signals.values(:,1);nan],[Position.signals.values(:,2);nan],[Position.signals.values(:,3); nan],[Vkite.signals.values; nan],'FaceColor','none','EdgeColor','interp','LineWidth', 1.5);
 cb = colorbar;
 ylabel(cb,'Ground Speed (m/s)','Rotation',270)
 view(3)
