@@ -9,11 +9,13 @@ f.Position = [400 200 1200 500];
 subplot(1,2,1);
 grid on, hold on
 
-% Input Wind Profile, Interpolations
-y_table = 0:0.25:50;
-plot(w_x_height_Data*z_scale,height_Data, 'o', 'Color',[0 0 0.5], 'MarkerFaceColor',[0 0 0.5]);
-x_table = spline(height_Data,w_x_height_Data*z_scale, y_table);
-plot(x_table,y_table, 'Color', [1 0.6 0.2]);
+if DataFlag == "SoftKiteModel"
+    % Input Wind Profile, Interpolations
+    y_table = 0:0.25:50;
+    plot(w_x_height_Data*z_scale,height_Data, 'o', 'Color',[0 0 0.5], 'MarkerFaceColor',[0 0 0.5]);
+    x_table = spline(height_Data,w_x_height_Data*z_scale, y_table);
+    plot(x_table,y_table, 'Color', [1 0.6 0.2]);
+end
 
 % Estimated Wind Points
 Est_Wind_Height = [W0_vec(start_filter:end,1:2), heights(start_filter:end)];
@@ -24,7 +26,7 @@ dir_est = atan2d(Est_Wind_Height(:,2),Est_Wind_Height(:,1));
 plot(y_est,x_est, 'o', 'Color', [0 0.5 0.5]);
 
 % Real(Flown) Wind Points
-Act_Wind_Height = [W_log.signals.values(N_start+start_filter:N_end,1:2), heights(N_start+start_filter:end)];
+Act_Wind_Height = [W(N_start+start_filter:N_end,1:2), heights(N_start+start_filter:end)];
 Act_Wind_Height = sortrows(Act_Wind_Height, 3);
 x_act = Act_Wind_Height(:,end);
 y_act = Act_Wind_Height(:,1);

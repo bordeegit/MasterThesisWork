@@ -12,6 +12,20 @@ set(groot,'DefaultLegendInterpreter', 'Latex');
 
 %load FlightData/Standard_LinY.mat
 
+%%% Translation Layer for SoftKiteModel
+
+% Flags for Specific plotting
+DataFlag = "SoftKiteModel";
+
+% Signals
+pos = Position.signals.values;             % Position in Global frame
+posDot = PositionDot.signals.values;       % Speed in Global frame
+posDotDot = PositionDotDot.signals.values; % Acceleration in Global frame
+F_T_norm = Forces.signals.values(:,end);   % Tether Force Magnitude
+W = W_log.signals.values;                  % Absolute Wind (xyz)
+Cd_sim = Cd.signals.values;                % Cd at each point
+Cl_sim = Cl.signals.values;                % Cl at each point
+
 % Structural Parameters
 parameters.rho          = rho;
 parameters.A            = area;
@@ -21,15 +35,15 @@ parameters.g            = g;
 parameters.Cd_l         = CD_Line;
 parameters.d_l          = Line_diameter;
 parameters.n_l          = n_line;
-parameters.Cd           = mean(Cd.signals.values);
-parameters.Cl           = mean(Cl.signals.values);
+parameters.Cd           = mean(Cd_sim);
+parameters.Cl           = mean(Cl_sim);
 
 
 % Size Initialization for codegen
-parameters.r_meas       = Position.signals.values(1,:)';
-parameters.rd_meas      = PositionDot.signals.values(1,:)';
-parameters.rdd_meas     = PositionDotDot.signals.values(1,:)';
-parameters.F_T_norm     = Forces.signals.values(1,end);
+parameters.r_meas       = pos(1,:)';
+parameters.rd_meas      = posDot(1,:)';
+parameters.rdd_meas     = posDot(1,:)';
+parameters.F_T_norm     = F_T_norm(1,end);
 
 
 % Simulation/Optimization Parameters
@@ -39,7 +53,7 @@ N_opt                   = 2500; % Number of steps to perform optimization
 printFlag               = true;
 codegenFlag             = false;
 
-z0                      = [6;0;%W_log.signals.values(N_start,1:2)';
+z0                      = [W(N_start,1:2)';
                            0.9; 0.1; sqrt(1-0.9^2-0.1^2)];
 
 Nop                     = size(z0,1);
@@ -93,21 +107,21 @@ if isMATLABReleaseOlderThan("R2024a")
 end
 
 %Add noise to Measurements (0.01 = 1%)
-noiseLvl = 0.1;
+noiseLvl = 0.05;
 
 tic
 for i = N_start:N_end
-    parameters.r_meas       = Position.signals.values(i,:)' + noiseLvl.*Position.signals.values(i,:)'.*randn(size(Position.signals.values(i,:)))';
-    parameters.rd_meas      = PositionDot.signals.values(i,:)' + noiseLvl.*PositionDot.signals.values(i,:)'.*randn(size(PositionDot.signals.values(i,:)))';
-    parameters.rdd_meas     = PositionDotDot.signals.values(i,:)' + noiseLvl.*PositionDotDot.signals.values(i,:)'.*randn(size(PositionDotDot.signals.values(i,:)))';
-    parameters.F_T_norm     = Forces.signals.values(i,end) + noiseLvl*Forces.signals.values(i,end)*randn(size(Forces.signals.values(i,end)));
+    parameters.r_meas       = pos(i,:)' + noiseLvl.*pos(i,:)'.*randn(size(pos(i,:)))';
+    parameters.rd_meas      = posDot(i,:)' + noiseLvl.*posDot(i,:)'.*randn(size(posDot(i,:)))';
+    parameters.rdd_meas     = posDot(i,:)' + noiseLvl.*posDot(i,:)'.*randn(size(posDot(i,:)))';
+    parameters.F_T_norm     = F_T_norm(i,end) + noiseLvl*F_T_norm(i,end)*randn(size(F_T_norm(i,end)));
 
     nl_con = @(z)normconstr_mex(z, parameters.rd_meas);
     fun = @(z)Wind_cost_mex(z,parameters);
     [zstar,~,exitflag,out] = fmincon(fun,z0,A,b,Aeq,beq,lb,ub,nl_con,options);
     z0                      = zstar;
     W0_vec(i-N_start+1,:)   = [zstar(1:2)' 0];
-    heights(i-N_start+1,:)  = Position.signals.values(i,3);
+    heights(i-N_start+1,:)  = pos(i,3);
     zl_vec(i-N_start+1,:)   = zstar(3:5)';
     parameters.zold         = zstar;
     if printFlag
@@ -117,7 +131,7 @@ for i = N_start:N_end
 end
 toc
 
-RMSE = rmse(W_log.signals.values(N_start:N_end,:), W0_vec(:,:));
+RMSE = rmse(W(N_start:N_end,:), W0_vec(:,:));
 fprintf("RMSE: %f, %f, %f, 2-norm: %f\n", RMSE, norm(RMSE));
 
 %% Printing results
@@ -133,7 +147,7 @@ printWindProfile
 
 %%% Difference in Norm between estimated and actual wind
 % figure(3)
-% plot(Xtime, vecnorm(W_log.signals.values(N_start:N_end,:)'), '--'), hold on
+% plot(Xtime, vecnorm(W(N_start:N_end,:)'), '--'), hold on
 % plot(Xtime, vecnorm(W0_vec')), hold off
 % xlabel('Time (s)','Interpreter','latex');
 % title('Wind Norm', 'Interpreter','latex');
@@ -144,8 +158,8 @@ printWindProfile
 % ind_neg = find(W0_vec(:,2) < -1.3);   
 % ind_pos = ind_pos(ind_pos > 2000);
 % ind_neg = ind_neg(ind_neg > 2000);
-% test_pos = Position.signals.values(ind_pos,:);
-% test_neg = Position.signals.values(ind_neg,:);
+% test_pos = pos(ind_pos,:);
+% test_neg = pos(ind_neg,:);
 % plot3(test_pos(:,1),test_pos(:,2),test_pos(:,3),'or'); 
 % plot3(test_neg(:,1),test_neg(:,2),test_neg(:,3),'ob');
 % hold off
@@ -169,7 +183,7 @@ printWindProfile
 % meanCl = parameters.Cl;
 %
 % figure(1)
-% plot(Xtime, Cd.signals.values(N_start:N_end)), hold on
+% plot(Xtime, Cd_sim(N_start:N_end)), hold on
 % plot(Xtime, meanCd*ones(size(Xtime)))
 % plot(Xtime, 1.20*meanCd*ones(size(Xtime)))
 % plot(Xtime, 0.80*meanCd*ones(size(Xtime)))
@@ -179,7 +193,7 @@ printWindProfile
 % hold off 
 % 
 % figure(2)
-% plot(Xtime, Cl.signals.values(N_start:N_end)), hold on
+% plot(Xtime, Cl_sim(N_start:N_end)), hold on
 % plot(Xtime, meanCl*ones(size(Xtime)))
 % plot(Xtime, 1.20*meanCl*ones(size(Xtime)))
 % plot(Xtime, 0.80*meanCl*ones(size(Xtime)))
