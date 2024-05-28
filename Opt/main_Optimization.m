@@ -1,4 +1,11 @@
 close all 
+
+set(groot,'DefaultAxesFontSize', 15);
+set(groot,'DefaultLineLineWidth', 1.5);
+set(groot,'DefaultTextInterpreter', 'Latex');
+set(groot,'DefaultAxesTickLabelInterpreter', 'Latex');  
+set(groot,'DefaultLegendInterpreter', 'Latex');
+
 %clear
 % Used for Hyperparameters optimization, remove clear before
 %clearvars -except parameters Cd_mod Cd_mean RMSE_cell W0_cell iter
@@ -61,14 +68,13 @@ options.Algorithm                   = 'sqp';
 options.FiniteDifferenceType        = 'central';
 options.Display                     = 'off';
 
-options.StepTolerance               = 1e-10;
-options.OptimalityTolerance         = 1e-10;
-options.ConstraintTolerance         = 1e-10;
-options.MaxIterations               = 500;
-options.MaxFunctionEvaluations      = 5000; 
+% options.StepTolerance               = 1e-10;
+% options.OptimalityTolerance         = 1e-10;
+% options.ConstraintTolerance         = 1e-10;
+% options.MaxIterations               = 500;
+% options.MaxFunctionEvaluations      = 5000; 
 options.SpecifyObjectiveGradient    = true;
 options.SpecifyConstraintGradient   = true;
-options.CheckGradients              = false;
 
 
 if codegenFlag
@@ -77,13 +83,14 @@ if codegenFlag
 end
 
 % Check Derivatives (v2024 only)
-if options.SpecifyObjectiveGradient
-    assert(checkGradients(@(z)Wind_cost(z, parameters), randn(5,1), options, Display="on"))
+if isMATLABReleaseOlderThan("R2024a")
+    if options.SpecifyObjectiveGradient
+        assert(checkGradients(@(z)Wind_cost(z, parameters), randn(5,1), options, Display="on"))
+    end
+    if options.SpecifyConstraintGradient
+        assert(all(checkGradients(@(z)normconstr(z, parameters.rd_meas), randn(5,1), options, IsConstraint=true, Display="on")))
+    end
 end
-if options.SpecifyConstraintGradient
-    assert(all(checkGradients(@(z)normconstr(z, parameters.rd_meas), randn(5,1), options, IsConstraint=true, Display="on")))
-end
-
 
 tic
 for i = N_start:N_end
@@ -103,9 +110,7 @@ for i = N_start:N_end
     if printFlag
         fprintf("Iteration %4d done, EstWind is [%7.4f %7.4f], (norm %4.3f), iter: %3d, feval: %3d, exit:%2d \n", ...
             i, zstar(1), zstar(2), norm(zstar(3:5)), out.iterations, out.funcCount, exitflag);
-    end
-    %fprintf("Cd : %7.4f   Cl : %7.4f\n", parameters.Cl, parameters.Cd);
-            
+    end     
 end
 toc
 
@@ -114,29 +119,16 @@ fprintf("RMSE: %f, %f, %f, 2-norm: %f\n", RMSE, norm(RMSE));
 
 %% Printing results
 
-Xtime = (N_start:N_end)/100;
+%%% Wind Estimation over time
+printWind
 
-f = figure;
-% Difference in Wind Magnitude in X direction
-subplot(1,2,1)
-plot(Xtime, W_log.signals.values(N_start:N_end,1), '--' , Xtime, W0_vec(:,1));
-xlabel('Time (s)','Interpreter','latex'), grid on;
-ylabel('Speed (m/s)', 'Interpreter','latex');
-title('$W_x$', 'Interpreter','latex');
-legend('Actual $W_x$','Estimated $W_x$', 'Interpreter', 'latex');
-ylim([6 16]), grid on;
+%%% 3D Position of trajectory
+printTraj
 
-% Difference in Wind Magnitude in Y direction
-subplot(1,2,2)
-plot(Xtime, W_log.signals.values(N_start:N_end,2),'--' ,Xtime, W0_vec(:,2));
-xlabel('Time (s)','Interpreter','latex');
-ylabel('Speed (m/s)', 'Interpreter','latex');
-title('$W_y$', 'Interpreter','latex');
-legend('Actual $W_y$','Estimated $W_y$', 'Interpreter', 'latex');
-ylim([-3 11]), grid on;
-f.Position = [300 300 1200 500];
+%%% Wind Profile 
+printWindProfile
 
-% Difference in Norm between estimated and actual wind
+%%% Difference in Norm between estimated and actual wind
 % figure(3)
 % plot(Xtime, vecnorm(W_log.signals.values(N_start:N_end,:)'), '--'), hold on
 % plot(Xtime, vecnorm(W0_vec')), hold off
@@ -144,15 +136,6 @@ f.Position = [300 300 1200 500];
 % title('Wind Norm', 'Interpreter','latex');
 % legend('Actual $|W|$','Estimated $|W|$', 'Interpreter', 'latex');
 
-% 3D Position of trajectory
-% figure(4),
-figure;
-plot3(Position.signals.values(:,1),Position.signals.values(:,2),Position.signals.values(:,3),'k'),grid on,hold on
-plot3(0,0,0,'k*')
-plot3([0, Position.signals.values(end,1)],...
-     [0, Position.signals.values(end,2)],...
-     [0, Position.signals.values(end,3)], 'm-o')
-xlabel('X (m)'), ylabel('Y (m)'), zlabel('Z (m)'), hold off
 %%% Finding where peaks are along the trajectory 
 % ind_pos = find(W0_vec(:,2) > 3.2);
 % ind_neg = find(W0_vec(:,2) < -1.3);   
@@ -164,55 +147,24 @@ xlabel('X (m)'), ylabel('Y (m)'), zlabel('Z (m)'), hold off
 % plot3(test_neg(:,1),test_neg(:,2),test_neg(:,3),'ob');
 % hold off
 
-% Euclidean distance between Lift estimated and actual direction
-figure;
-Fl = Forces.signals.values(N_start:N_end, 4:6);
-zl_dot = zeros(N_opt,1);
-for i = N_start:N_end
-    zl_dot(i-N_start+1) = dot(Fl(i-N_start+1,:)/norm(Fl(i-N_start+1,:)),zl_vec(i-N_start+1,:));
-end
-plot(Xtime, zl_dot)
-xlabel('Time (s)','Interpreter','latex'); 
-ylabel('Magnitude', 'Interpreter','latex'), ylim([0.95 1.05]);
-title('$z_l\: Dot\: Product $', 'Interpreter','latex');
+%%% Euclidean distance between Lift estimated and actual direction
+% figure;
+% Fl = Forces.signals.values(N_start:N_end, 4:6);
+% zl_dot = zeros(N_opt,1);
+% for i = N_start:N_end
+%     zl_dot(i-N_start+1) = dot(Fl(i-N_start+1,:)/norm(Fl(i-N_start+1,:)),zl_vec(i-N_start+1,:));
+% end
+% plot(Xtime, zl_dot)
+% xlabel('Time (s)','Interpreter','latex'); 
+% ylabel('Magnitude', 'Interpreter','latex'), ylim([0.95 1.05]);
+% title('$z_l\: Dot\: Product $', 'Interpreter','latex');
 
-% Wind Profile 
-start_filter = 50;
-segments = 15;
-f = figure;
-subplot(1,2,1);
-printWindX;
-subplot(1,2,2);
-printWindDir;
-f.Position = [400 200 1200 500];
-
-% zl_vec = Forces.signals.values(N_start:N_end,4:6)/norm(Forces.signals.values(N_start:N_end,4:6));
-% figure(5);
-% subplot(3,1,1);
-% plot(Xtime, Forces.signals.values(N_start:N_end,4), '--' , Xtime, zl_vec(:,1));
-% xlabel('Time (s)','Interpreter','latex');
-% ylabel('Speed (m/s)', 'Interpreter','latex');
-% title('$W_x$', 'Interpreter','latex');
-% legend('Actual $W_x$','Estimated $W_x$', 'Interpreter', 'latex');
-
-
-
-
-% figure(3)
-% plot(Xtime, W_log.signals.values(N_start:N_end,3),'--' , Xtime, W0_vec(:,3));
-% xlabel('Time (s)','Interpreter','latex');
-% ylabel('Speed (m/s)', 'Interpreter','latex');
-% title('$W_z$', 'Interpreter','latex');
-% legend('Actual $W_z$','Estimated $W_z$', 'Interpreter', 'latex', 'Location','southeast');
-% h = get(gca,'Children');
-% set(gca,'Children',[h(2) h(1)]);
-% fig3 = gca;
-
-Xtime = (N_start:N_end)/100;
-
-meanCd = parameters.Cd;
-meanCl = parameters.Cl;
-
+%%% Aerodynamic coefficients Hyperparamter Optimization
+% Xtime = (N_start:N_end)/100;
+% 
+% meanCd = parameters.Cd;
+% meanCl = parameters.Cl;
+%
 % figure(1)
 % plot(Xtime, Cd.signals.values(N_start:N_end)), hold on
 % plot(Xtime, meanCd*ones(size(Xtime)))
@@ -232,6 +184,5 @@ meanCl = parameters.Cl;
 % xlabel('Time (s)');
 % exportgraphics(gca,'Clvar.pdf','ContentType','vector');
 % hold off
-
-
-%exportgraphics(gca,'wx.pdf','ContentType','vector')
+%
+% exportgraphics(gca,'wx.pdf','ContentType','vector')
