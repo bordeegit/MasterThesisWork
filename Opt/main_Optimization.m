@@ -10,7 +10,7 @@ set(groot,'DefaultLegendInterpreter', 'Latex');
 % Used for Hyperparameters optimization, remove clear before
 %clearvars -except parameters Cd_mod Cd_mean RMSE_cell W0_cell iter
 
-%load FlightData/Standard_LinY.mat
+load FlightData/Standard_LinY.mat
 
 %%% Translation Layer for SoftKiteModel
 
@@ -51,9 +51,9 @@ parameters.F_T_norm     = F_T_norm(1,end);
 N_start                 = 1;
 N_opt                   = 2500; % Number of steps to perform optimization
 printFlag               = true;
-codegenFlag             = false;
+codegenFlag             = true;
 
-z0                      = [W(N_start,1:2)';
+z0                      = [6;0%W(N_start,1:2)';
                            0.9; 0.1; sqrt(1-0.9^2-0.1^2)];
 
 Nop                     = size(z0,1);
@@ -97,7 +97,7 @@ if codegenFlag
 end
 
 % Check Derivatives (v2024 only)
-if isMATLABReleaseOlderThan("R2024a")
+if ~isMATLABReleaseOlderThan("R2024a")
     if options.SpecifyObjectiveGradient
         assert(checkGradients(@(z)Wind_cost(z, parameters), randn(5,1), options, Display="on"))
     end
@@ -107,13 +107,13 @@ if isMATLABReleaseOlderThan("R2024a")
 end
 
 %Add noise to Measurements (0.01 = 1%)
-noiseLvl = 0.05;
+noiseLvl = 0;
 
 tic
 for i = N_start:N_end
     parameters.r_meas       = pos(i,:)' + noiseLvl.*pos(i,:)'.*randn(size(pos(i,:)))';
     parameters.rd_meas      = posDot(i,:)' + noiseLvl.*posDot(i,:)'.*randn(size(posDot(i,:)))';
-    parameters.rdd_meas     = posDot(i,:)' + noiseLvl.*posDot(i,:)'.*randn(size(posDot(i,:)))';
+    parameters.rdd_meas     = posDotDot(i,:)' + noiseLvl.*posDotDot(i,:)'.*randn(size(posDotDot(i,:)))';
     parameters.F_T_norm     = F_T_norm(i,end) + noiseLvl*F_T_norm(i,end)*randn(size(F_T_norm(i,end)));
 
     nl_con = @(z)normconstr_mex(z, parameters.rd_meas);
