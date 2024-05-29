@@ -9,7 +9,7 @@ f.Position = [400 200 1200 500];
 subplot(1,2,1);
 grid on, hold on
 
-if DataFlag == "SoftKiteModel"
+if DataFlag == "SoftKite"
     % Input Wind Profile, Interpolations
     y_table = 0:0.25:50;
     plot(w_x_height_Data*z_scale,height_Data, 'o', 'Color',[0 0 0.5], 'MarkerFaceColor',[0 0 0.5]);
