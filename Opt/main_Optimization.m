@@ -1,4 +1,4 @@
-close all 
+close all; clear
 
 set(groot,'DefaultAxesFontSize', 15);
 set(groot,'DefaultLineLineWidth', 1.5);
@@ -10,11 +10,11 @@ set(groot,'DefaultLegendInterpreter', 'Latex');
 % Used for Hyperparameters optimization, remove clear before
 %clearvars -except parameters Cd_mod Cd_mean RMSE_cell W0_cell iter
 
-load FlightData/Standard_LinY.mat
+load FlightData/Kitemill_90S.mat
 
 %%% Translation Layer 
 
-SoftKite_TL
+Kitemill_TL
 
 % Size Initialization for codegen
 parameters.r_meas       = pos(1,:)';
@@ -26,11 +26,11 @@ parameters.F_T_norm     = F_T_norm(1,end);
 % Simulation/Optimization Parameters
 
 N_start                 = 1;
-N_opt                   = 2500; % Number of steps to perform optimization
+N_opt                   = 5000; % Number of steps to perform optimization
 printFlag               = true;
 codegenFlag             = false;
 
-z0                      = [6;0%W(N_start,1:2)';
+z0                      = [12;0%W(N_start,1:2)';
                            0.9; 0.1; sqrt(1-0.9^2-0.1^2)];
 
 Nop                     = size(z0,1);
@@ -50,7 +50,7 @@ b = [];
 
 % Bounds on W_x, W_y (can also add bound on components of zl)
 lb = [5;-2;-1;-1;-1];
-ub = [15;20;1;1;1];
+ub = [20;20;1;1;1];
 
 
 % Optimization Options
@@ -96,7 +96,7 @@ for i = N_start:N_end
     nl_con = @(z)normconstr_mex(z, parameters.rd_meas);
     fun = @(z)Wind_cost_mex(z,parameters);
     [zstar,~,exitflag,out] = fmincon(fun,z0,A,b,Aeq,beq,lb,ub,nl_con,options);
-    z0                      = zstar;
+    %z0                      = zstar;
     W0_vec(i-N_start+1,:)   = [zstar(1:2)' 0];
     heights(i-N_start+1,:)  = pos(i,3);
     zl_vec(i-N_start+1,:)   = zstar(3:5)';
@@ -113,14 +113,14 @@ fprintf("RMSE: %f, %f, %f, 2-norm: %f\n", RMSE, norm(RMSE));
 
 %% Printing results
 
-%%% Wind Estimation over time
-printWind
-
 %%% 3D Position of trajectory
 printTraj
 
+%%% Wind Estimation over time
+printWind
+
 %%% Wind Profile 
-printWindProfile
+%printWindProfile
 
 %%% Difference in Norm between estimated and actual wind
 % figure(3)

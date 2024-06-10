@@ -2,23 +2,23 @@
 DataFlag = "Kitemill";
 
 % Signals
-pos = [out.logsout{8}.Values.Data out.logsout{9}.Values.Data out.logsout{4}.Values.Data];             % Position in Global frame
-posDot = out.logsout{35}.Values.Data;       % Speed in Global frame
-posDotDot = %TODO; % Acceleration in Global frame
-F_T_norm = out.logsout{59}.Values.Data;   % Tether Force Magnitude
-W = repmat(out.logsout{16}.Values.Data, size(out.logsout{59}.Values.Data));                  % Absolute Wind (xyz)
-Cd_sim = out.logsout{53}.Values.Data;                % Cd at each point
-Cl_sim = out.logsout{54}.Values.Data;                % Cl at each point
+pos = [out.logsout.get("x").Values.Data out.logsout.get("y").Values.Data out.logsout.get("h").Values.Data];             % Position in Global frame
+posDot = [out.logsout.get("x_dot").Values.Data out.logsout.get("y_dot").Values.Data out.logsout.get("z_dot").Values.Data];    % Speed in Global frame
+posDotDot = [0 0 0; diff(posDot)/0.01];                          % Acceleration in Global frame
+F_T_norm = out.logsout.get("F_winch").Values.Data;     % Tether Force Magnitude
+W = repmat(out.logsout.get("wind speed").Values.Data, size(F_T_norm));                  % Absolute Wind (xyz)
+Cd_sim = out.logsout.get("CD").Values.Data;                % Cd at each point
+Cl_sim = out.logsout.get("CL").Values.Data;                % Cl at each point
 % Check if Cd and Cl are not inverted 
 
-% Structural Parameters TODO
-parameters.rho          = rho;
-parameters.A            = area;
-parameters.mk           = mass;
-parameters.mt_noL       = mt_noL;
-parameters.g            = g;
-parameters.Cd_l         = CD_Line;
-parameters.d_l          = Line_diameter;
-parameters.n_l          = n_line;
+% Structural Parameters (from functions/parameters.m)
+parameters.rho          = 1.225;
+parameters.A            = 2.082;
+parameters.mk           = 54;
+parameters.mt_noL       = 0.74/100; % dyneema-sk99(3.5mm) weight is 0.74kg/100m
+parameters.g            = 9.81;
+parameters.Cd_l         = 1.2;
+parameters.d_l          = 3.5e-3;
+parameters.n_l          = 1;
 parameters.Cd           = mean(Cd_sim);
 parameters.Cl           = mean(Cl_sim);
