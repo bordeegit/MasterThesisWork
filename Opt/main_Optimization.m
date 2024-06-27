@@ -10,10 +10,12 @@ set(groot,'DefaultLegendInterpreter', 'Latex');
 % Used for Hyperparameters optimization, remove clear before
 %clearvars -except parameters Cd_mod Cd_mean RMSE_cell W0_cell iter
 
+%load FlightData\Standard_LinY.mat
 load FlightData/Kitemill_90S.mat
 
 %%% Translation Layer 
 
+%SoftKite_TL
 Kitemill_TL
 
 % Size Initialization for codegen

@@ -50,7 +50,7 @@ CD_Line=1.2;                                    % Coeff. drag tether
 Line_diameter=0.003;                            % Tether diam.
 Line_density=970;                               % Tether density (kg/m^3)
 n_line=3;                                       % n. of lines
-mt_noL = 0.25*n_line*Line_diameter^2*pi*Line_density; 
+mt_noL = n_line*Line_diameter^2*pi*Line_density; 
 
 %%%%% Wind Parameters %%%%%
 %% SHEAR WIND MODEL
