@@ -10,13 +10,13 @@ set(groot,'DefaultLegendInterpreter', 'Latex');
 % Used for Hyperparameters optimization, remove clear before
 %clearvars -except parameters Cd_mod Cd_mean RMSE_cell W0_cell iter
 
-%load FlightData\Standard_LinY.mat
-load FlightData/Kitemill_90S.mat
+load FlightData\Standard_LinY.mat
+%load FlightData/Kitemill_90S.mat
 
 %%% Translation Layer 
 
-%SoftKite_TL
-Kitemill_TL
+SoftKite_TL
+%Kitemill_TL
 
 % Size Initialization for codegen
 parameters.r_meas       = pos(1,:)';
@@ -122,7 +122,7 @@ printTraj
 printWind
 
 %%% Wind Profile 
-%printWindProfile
+printWindProfile
 
 %%% Difference in Norm between estimated and actual wind
 % figure(3)
