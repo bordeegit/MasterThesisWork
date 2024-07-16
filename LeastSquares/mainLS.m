@@ -8,24 +8,29 @@ set(groot,'DefaultAxesTickLabelInterpreter', 'Latex');
 set(groot,'DefaultLegendInterpreter', 'Latex');
 
 %% Load Flight Data & Signals Convertion
-load FlightData\Standard_LinY.mat
+%load FlightData\Standard_Const_5_2.mat
+load FlightData\Standard_Step.mat
 SoftKite_TL
 
 %% Computation of Equivalent Kite Aerodynamic Efficiency 
 % There are 2 ways to compute beta (AoA variation)
 % There are 2 ways to compute E_eq (base and approx)
+% C_L = mean(Cl_sim)*ones(size(Cl_sim));
+% C_D = mean(Cd_sim)*ones(size(Cd_sim)); 
 C_L = Cl_sim;
-C_D = Cd_sim; 
+C_D = Cd_sim;
 r_l = vecnorm(pos')'; % equivalent to states.signals.values(:,5)
 beta = alpha.signals.values - alpha_0;
 C_Deq = C_D.*(1 + (n_line*r_l*parameters.d_l*parameters.Cd_l.*cos(beta))./(4*parameters.A*C_D));
 
 % Alternative and equivalent computation of beta (from definition)
-%   We = W - posDot;
-%   beta_alt = pi/2 - acos(dot(We, pos, 2)./(vecnorm(We')'.*vecnorm(pos')'));
+%   This ofc cannot be used in practice, since we don't have We
+%  We = W - posDot;
+%  beta_alt = pi/2 - acos(dot(We, pos, 2)./(vecnorm(We')'.*vecnorm(pos')'));
 
 % NOTE: The introduction of beta gives minimal difference, the 
 %       difference is 2 orders of magnitude less than the absolute value 
+%       However, beta is used in the second method
 
 E_eq_1 = C_L./C_Deq;
 E_eq_2 = cos(beta)./sin(beta); % Equivalent to 1./tan(beta)
@@ -72,6 +77,8 @@ title("Differences"), xlim([0;6000])
 legend('base E eq','approx E eq', 'traction', 'speed', 'Location','southeast' ), hold off
 sgtitle('$\mathbf{|\vec{W}_{e,r}|}$', 'Interpreter','latex')
 
+vecnorm(W_er_norm_vec - W_er_norm_real)
+
 % The computation of W_e,r with the unapproximaed method of computation of 
 % E_eq produces a lot less spikes, as it can be deduced from the plots of 
 % E_eq_1 and E_eq_2 
@@ -98,105 +105,75 @@ W_er_norm = W_er_norm_vec(:,typeIndex);
 L_dot = statesdot.signals.values(:,5); % unwinding/winding speed
 l = pos./vecnorm(pos,2,2); % kite position versor
 
-blockSize = 40;
-initStep = 200;
+blockSize = 50;
+initStep = 200; % Starting point, includes a left-truncation
 maxStep = 6001; % Shouldn't exceed length(l)
 noZ = 1;        % Remove the computation of Wz (1 = yes, 0 = no)
 
-%[W_est_rec, W_est_vals, iSequence] = blockLS(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ);
+%[W_est, iSequence] = blockLS(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ);
 
-[W_est_rec, W_est_vals, iSequence] = slidingLS(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ);
+[W_est, iSequence] = slidingLS(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ);
 
-
-figure,
-subplot(3,1,1),
-plot(W_est_vals(:,1)),  grid on;
-subplot(3,1,2),
-plot(W_est_vals(:,2)),  grid on;
-subplot(3,1,3)
-plot(W_est_vals(:,3)),  grid on;
-sgtitle("Unfiltered Estimation Values")
-
-%% Left-Trucation 
-
-% Due to very high spikes at the start of the simulation, I decided to
-% left-truncate the results
-
-% N_filter = 200; % Steps to skip in the comparison (100 steps = 1 sec)
-% 
-% iFilterStart = 1+floor(N_filter/blockSize);
-% iSequence = iSequence(1,iFilterStart:end);
-% figure,
-% subplot(2,1,1), grid on, hold on
-% plot(W_est_rec(N_filter:end,1));
-% plot(W(N_filter:end,1),'--'), hold off
-% subplot(2,1,2), grid on, hold on
-% plot(W_est_rec(N_filter:end,2));
-% plot(W(N_filter:end,2),'--'), hold off
-% sgtitle("Left-Truncated Estimation Vector")
-% 
-% % Performance Factors 
-% diffValues = abs(norm(W_est_vals(iFilterStart:end,1) - W(iSequence,1)))
-% diffRec    = abs(norm(W_est_rec(N_filter:5998,1)-W(N_filter:5998,1)))
-% meanX      = mean(W_est_rec(100:end,1))
-% meanY      = mean(W_est_rec(100:end,2))
-% meanZ      = mean(W_est_rec(100:end,3))
+% Performance Factors 
+RMSE = rmse(W(iSequence,:), W_est(iSequence,:));
+fprintf("RMSE: %f, %f, %f, 2-norm: %f\n", RMSE, norm(RMSE));
 
 figure, grid on, hold on,
-subplot(2,1,1), grid on, hold on
-plot(W_est_rec(:,1));
-plot(W(1:maxStep,1),'--'), hold off
-subplot(2,1,2), grid on, hold on
-plot(W_est_rec(:,2));
-plot(W(1:maxStep,2),'--'), hold off
-sgtitle("Left-Truncated Estimation Vector")
+subplot(3,1,1), grid on, hold on
+plot(W_est(:,1));
+plot(W(1:maxStep,1),'--'), xlim([1 6000]), ylim([-1 15]), hold off
+subplot(3,1,2), grid on, hold on
+plot(W_est(:,2));
+plot(W(1:maxStep,2),'--'), xlim([1 6000]), ylim([-1 5]), hold off
+subplot(3,1,3), grid on, hold on
+plot(W_est(:,3));
+plot(W(1:maxStep,3),'--'), xlim([1 6000]), hold off
+sgtitle("Estimation Results")
 
-stop 
 %% Filtering 
-
 % Initial testing with simple threshold approach
 %   spike happen around the real/correct value, so a simple 
 %   |W_est_vals| < th can't work
-
+%
 % Used Matlab's DataCleaner App on VALUES, trial&error for params
 %   - filloutliers: remove spikes (moving median) and fill (lin interp) 
 %   - smoothdata: smooth data (moving mean with moving window)
-W_est_trunc = W_est_vals(iFilterStart:end,:); % Skip first second 
-W_est_table = array2table(W_est_trunc, 'VariableNames',{'Wx','Wy','Wz'});
-W_est_table = filloutliers(W_est_table,"linear","movmedian",20,"DataVariables",["Wx","Wy"]);
-W_est_table = smoothdata(W_est_table,"movmean",20,"DataVariables",["Wx","Wy"]);
-W_est_vals_fil = table2array(W_est_table);
-
-figure;
-subplot(3,1,1)
-plot(W_est_trunc(:,1), 'b-'), hold on, grid on,
-plot(W_est_vals_fil(:,1), 'r-');
-legend('Original','Filtered'), hold off;
-subplot(3,1,2)
-plot(W_est_trunc(:,2), 'b-'), hold on, grid on,
-plot(W_est_vals_fil(:,2), 'r-');
-legend('Original','Filtered'), hold off;
-subplot(3,1,3)
-plot(W_est_trunc(:,3), 'b-'), hold on, grid on,
-plot(W_est_vals_fil(:,3), 'r-');
-legend('Original','Filtered'), hold off;
-sgtitle("Filtered values results")
-
-W_est_rec_fil = kron(W_est_vals_fil, ones(blockSize,1));
-
-figure, 
-subplot(2,1,1), grid on,hold on
-plot(W_est_rec(N_filter:end,1),'--', 'LineWidth', 1);
-plot(W_est_rec_fil(:,1));
-plot(W(N_filter:end,1)),
-legend('Estimated', 'Filtered', 'Real'), ylim([-5;20]), hold off
-subplot(2,1,2),grid on, hold on
-plot(W_est_rec(N_filter:end,2), '--', 'LineWidth', 1);
-plot(W_est_rec_fil(:,2));
-plot(W(N_filter:end,2)),
-legend('Estimated', 'Filtered', 'Real'), ylim([-5;20]), hold off
-sgtitle("Filtered reconstructed results")
-
-meanX_fil = mean(W_est_rec_fil(:,1))
-meanY_fil = mean(W_est_rec_fil(:,2))
-meanZ_fil = mean(W_est_rec_fil(:,3))
+% W_est_trunc = W_est_vals(iFilterStart:end,:); % Skip first second 
+% W_est_table = array2table(W_est_trunc, 'VariableNames',{'Wx','Wy','Wz'});
+% W_est_table = filloutliers(W_est_table,"linear","movmedian",20,"DataVariables",["Wx","Wy"]);
+% W_est_table = smoothdata(W_est_table,"movmean",20,"DataVariables",["Wx","Wy"]);
+% W_est_vals_fil = table2array(W_est_table);
+% 
+% figure;
+% subplot(3,1,1)
+% plot(W_est_trunc(:,1), 'b-'), hold on, grid on,
+% plot(W_est_vals_fil(:,1), 'r-');
+% legend('Original','Filtered'), hold off;
+% subplot(3,1,2)
+% plot(W_est_trunc(:,2), 'b-'), hold on, grid on,
+% plot(W_est_vals_fil(:,2), 'r-');
+% legend('Original','Filtered'), hold off;
+% subplot(3,1,3)
+% plot(W_est_trunc(:,3), 'b-'), hold on, grid on,
+% plot(W_est_vals_fil(:,3), 'r-');
+% legend('Original','Filtered'), hold off;
+% sgtitle("Filtered values results")
+% 
+% W_est_rec_fil = kron(W_est_vals_fil, ones(blockSize,1));
+% 
+% figure, 
+% subplot(2,1,1), grid on,hold on
+% plot(W_est_rec(N_filter:end,1),'--', 'LineWidth', 1);
+% plot(W_est_rec_fil(:,1));
+% plot(W(N_filter:end,1)),
+% legend('Estimated', 'Filtered', 'Real'), ylim([-5;20]), hold off
+% subplot(2,1,2),grid on, hold on
+% plot(W_est_rec(N_filter:end,2), '--', 'LineWidth', 1);
+% plot(W_est_rec_fil(:,2));
+% plot(W(N_filter:end,2)),
+% legend('Estimated', 'Filtered', 'Real'), ylim([-5;20]), hold off
+% sgtitle("Filtered reconstructed results")
+% 
+% meanX_fil = mean(W_est_rec_fil(:,1))
+% meanY_fil = mean(W_est_rec_fil(:,2))
+% meanZ_fil = mean(W_est_rec_fil(:,3))
