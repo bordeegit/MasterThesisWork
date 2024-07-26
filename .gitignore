@@ -3,6 +3,7 @@
 /codegen
 /Examples
 /Images
+/FlightDataLorenzo
 *.mexw64
 *.asv
 *.pdf

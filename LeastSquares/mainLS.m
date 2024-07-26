@@ -8,9 +8,12 @@ set(groot,'DefaultAxesTickLabelInterpreter', 'Latex');
 set(groot,'DefaultLegendInterpreter', 'Latex');
 
 %% Load Flight Data & Signals Convertion
-%load FlightData\Standard_Const_5_2.mat
 load FlightData\Standard_Step.mat
 SoftKite_TL
+
+%load FlightData\Kitemill_90S.mat
+%Kitemill_TL
+
 
 %% Computation of Equivalent Kite Aerodynamic Efficiency 
 % There are 2 ways to compute beta (AoA variation)
@@ -19,14 +22,16 @@ SoftKite_TL
 % C_D = mean(Cd_sim)*ones(size(Cd_sim)); 
 C_L = Cl_sim;
 C_D = Cd_sim;
+%n_line = 1;
 r_l = vecnorm(pos')'; % equivalent to states.signals.values(:,5)
 beta = alpha.signals.values - alpha_0;
-C_Deq = C_D.*(1 + (n_line*r_l*parameters.d_l*parameters.Cd_l.*cos(beta))./(4*parameters.A*C_D));
 
 % Alternative and equivalent computation of beta (from definition)
 %   This ofc cannot be used in practice, since we don't have We
-%  We = W - posDot;
-%  beta_alt = pi/2 - acos(dot(We, pos, 2)./(vecnorm(We')'.*vecnorm(pos')'));
+%We = W - posDot;
+%beta = pi/2 - acos(dot(We, pos, 2)./(vecnorm(We')'.*vecnorm(pos')'));
+
+C_Deq = C_D.*(1 + (parameters.n_l*r_l*parameters.d_l*parameters.Cd_l.*cos(beta))./(4*parameters.A*C_D));
 
 % NOTE: The introduction of beta gives minimal difference, the 
 %       difference is 2 orders of magnitude less than the absolute value 
@@ -76,7 +81,7 @@ plot(W_er_norm_vec(:,2) - W_er_norm_vec(:,4))
 title("Differences"), xlim([0;6000])
 legend('base E eq','approx E eq', 'traction', 'speed', 'Location','southeast' ), hold off
 sgtitle('$\mathbf{|\vec{W}_{e,r}|}$', 'Interpreter','latex')
-
+% TODO: Do differences 
 vecnorm(W_er_norm_vec - W_er_norm_real)
 
 % The computation of W_e,r with the unapproximaed method of computation of 
@@ -105,14 +110,14 @@ W_er_norm = W_er_norm_vec(:,typeIndex);
 L_dot = statesdot.signals.values(:,5); % unwinding/winding speed
 l = pos./vecnorm(pos,2,2); % kite position versor
 
-blockSize = 50;
+blockSize = 30; % Size of the block/window 
 initStep = 200; % Starting point, includes a left-truncation
 maxStep = 6001; % Shouldn't exceed length(l)
 noZ = 1;        % Remove the computation of Wz (1 = yes, 0 = no)
 
-%[W_est, iSequence] = blockLS(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ);
+[W_est, iSequence] = blockLS(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ);
 
-[W_est, iSequence] = slidingLS(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ);
+%[W_est, iSequence] = slidingLS(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ);
 
 % Performance Factors 
 RMSE = rmse(W(iSequence,:), W_est(iSequence,:));
@@ -177,3 +182,5 @@ sgtitle("Estimation Results")
 % meanX_fil = mean(W_est_rec_fil(:,1))
 % meanY_fil = mean(W_est_rec_fil(:,2))
 % meanZ_fil = mean(W_est_rec_fil(:,3))
+
+%% Hyperparameter optimization?
