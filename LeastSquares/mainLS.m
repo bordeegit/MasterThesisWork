@@ -8,7 +8,7 @@ set(groot,'DefaultAxesTickLabelInterpreter', 'Latex');
 set(groot,'DefaultLegendInterpreter', 'Latex');
 
 %% Load Flight Data & Signals Convertion
-load FlightData\Standard_Step.mat
+load FlightData\Standard_Const_5_2.mat
 SoftKite_TL
 
 %load FlightData\Kitemill_90S.mat
@@ -18,13 +18,13 @@ SoftKite_TL
 %% Computation of Equivalent Kite Aerodynamic Efficiency 
 % There are 2 ways to compute beta (AoA variation)
 % There are 2 ways to compute E_eq (base and approx)
-% C_L = mean(Cl_sim)*ones(size(Cl_sim));
-% C_D = mean(Cd_sim)*ones(size(Cd_sim)); 
-C_L = Cl_sim;
-C_D = Cd_sim;
+C_L = mean(Cl_sim)*ones(size(Cl_sim));
+C_D = mean(Cd_sim)*ones(size(Cd_sim)); 
+%C_L = Cl_sim;
+%C_D = Cd_sim;
 %n_line = 1;
 r_l = vecnorm(pos')'; % equivalent to states.signals.values(:,5)
-beta = alpha.signals.values - alpha_0;
+beta = alpha.signals.values - alpha_0; %SoftKite
 
 % Alternative and equivalent computation of beta (from definition)
 %   This ofc cannot be used in practice, since we don't have We
@@ -74,15 +74,18 @@ plot(W_er_norm_real)
 title('Values'),xlim([0;6000]) 
 legend('traction base', 'speed base', 'traction approx', 'speed approx', 'real', 'Location','southeast'), hold off
 subplot(2,1,2), grid on, hold on
-plot(W_er_norm_vec(:,1) - W_er_norm_vec(:,2))
-plot(W_er_norm_vec(:,3) - W_er_norm_vec(:,4))
-plot(W_er_norm_vec(:,1) - W_er_norm_vec(:,3))
-plot(W_er_norm_vec(:,2) - W_er_norm_vec(:,4))
+plot(W_er_norm_vec - W_er_norm_real)
+% TODO: Ha senso fare grafico delle 4 differenze tra approx e reali?
+
+%plot(W_er_norm_vec(:,1) - W_er_norm_vec(:,2))
+%plot(W_er_norm_vec(:,3) - W_er_norm_vec(:,4))
+%plot(W_er_norm_vec(:,1) - W_er_norm_vec(:,3))
+%plot(W_er_norm_vec(:,2) - W_er_norm_vec(:,4))
 title("Differences"), xlim([0;6000])
 legend('base E eq','approx E eq', 'traction', 'speed', 'Location','southeast' ), hold off
-sgtitle('$\mathbf{|\vec{W}_{e,r}|}$', 'Interpreter','latex')
-% TODO: Do differences 
-vecnorm(W_er_norm_vec - W_er_norm_real)
+sgtitle('$\mathbf{|\vec{W}_{e,r}|}$', 'Interpreter','latex') 
+approx_validity = vecnorm(W_er_norm_vec - W_er_norm_real);
+fprintf("approx_validity: %.3f  %.3f  %.3f  %.3f\n",approx_validity);
 
 % The computation of W_e,r with the unapproximaed method of computation of 
 % E_eq produces a lot less spikes, as it can be deduced from the plots of 
@@ -110,19 +113,25 @@ W_er_norm = W_er_norm_vec(:,typeIndex);
 L_dot = statesdot.signals.values(:,5); % unwinding/winding speed
 l = pos./vecnorm(pos,2,2); % kite position versor
 
-blockSize = 30; % Size of the block/window 
+blockSize = 273; % Size of the block/window 
 initStep = 200; % Starting point, includes a left-truncation
 maxStep = 6001; % Shouldn't exceed length(l)
 noZ = 1;        % Remove the computation of Wz (1 = yes, 0 = no)
 
-[W_est, iSequence] = blockLS(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ);
+%[W_est, iSequence] = blockLS(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ);
 
-%[W_est, iSequence] = slidingLS(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ);
+[W_est, iSequence] = slidingLS(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ);
 
 % Performance Factors 
 RMSE = rmse(W(iSequence,:), W_est(iSequence,:));
 fprintf("RMSE: %f, %f, %f, 2-norm: %f\n", RMSE, norm(RMSE));
 
+% Block size wrt loop Period
+loop_period = diff(find(diff(sign(diff(pos(initStep:maxStep,2))))==-2));
+figure, grid on, hold on,
+plot(loop_period), yline(blockSize, 'r--', 'LineWidth', 4), hold off
+
+% Results
 figure, grid on, hold on,
 subplot(3,1,1), grid on, hold on
 plot(W_est(:,1));
