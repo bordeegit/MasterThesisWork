@@ -10,6 +10,10 @@ W = W_log.signals.values;                  % Absolute Wind (xyz)
 Cd_sim = Cd.signals.values;                % Cd at each point
 Cl_sim = Cl.signals.values;                % Cl at each point
 
+% For LS approach
+L_dot = statesdot.signals.values(:,5);     % Cable unwinding/winding speed
+beta = alpha.signals.values - alpha_0;     % AoA variation
+
 % Structural Parameters
 parameters.rho          = rho;
 parameters.A            = area;

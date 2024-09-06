@@ -6,10 +6,14 @@ pos = [out.logsout.get("x").Values.Data out.logsout.get("y").Values.Data out.log
 posDot = [out.logsout.get("x_dot").Values.Data out.logsout.get("y_dot").Values.Data out.logsout.get("z_dot").Values.Data];    % Speed in Global frame
 posDotDot = [0 0 0; diff(posDot)/0.01];                          % Acceleration in Global frame
 F_T_norm = out.logsout.get("F_winch").Values.Data;     % Tether Force Magnitude
-W = repmat(out.logsout.get("wind speed").Values.Data, size(F_T_norm));                  % Absolute Wind (xyz)
+W = out.logsout.get("wind speed").Values.Data;                  % Absolute Wind (xyz)
 Cd_sim = out.logsout.get("CD").Values.Data;                % Cd at each point
 Cl_sim = out.logsout.get("CL").Values.Data;                % Cl at each point
 % Check if Cd and Cl are not inverted 
+
+% For LS approach  
+L_dot = vecnorm(out.logsout.get('xyhdot').Values.Data')'; % (taut) Cable unwinding/winding speed 
+beta = reshape(out.logsout.get('alfa_deg').Values.Data, [], 1);  % AoA variation
 
 % Structural Parameters (from functions/parameters.m)
 parameters.rho          = 1.225;

@@ -10,13 +10,14 @@ set(groot,'DefaultLegendInterpreter', 'Latex');
 % Used for Hyperparameters optimization, remove clear before
 %clearvars -except parameters Cd_mod Cd_mean RMSE_cell W0_cell iter
 
-load FlightData\Standard_LinY.mat
-%load FlightData/Kitemill_90S.mat
+%load FlightData\Standard_LinY.mat
+%load FlightData\Kitemill_90S.mat
+load FlightData\Kitemill_Full_180S.mat
 
 %%% Translation Layer 
 
-SoftKite_TL
-%Kitemill_TL
+%SoftKite_TL
+Kitemill_TL
 
 % Size Initialization for codegen
 parameters.r_meas       = pos(1,:)';
@@ -27,8 +28,8 @@ parameters.F_T_norm     = F_T_norm(1,end);
 
 % Simulation/Optimization Parameters
 
-N_start                 = 1;
-N_opt                   = 5000; % Number of steps to perform optimization
+N_start                 = 1000;
+N_opt                   = 1000; % Number of steps to perform optimization
 printFlag               = true;
 codegenFlag             = false;
 
@@ -116,7 +117,7 @@ fprintf("RMSE: %f, %f, %f, 2-norm: %f\n", RMSE, norm(RMSE));
 %% Printing results
 
 %%% 3D Position of trajectory
-printTraj
+printTraj(pos,posDot,N_start,N_end)
 
 %%% Wind Estimation over time
 printWind

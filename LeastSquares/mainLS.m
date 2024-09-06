@@ -8,26 +8,37 @@ set(groot,'DefaultAxesTickLabelInterpreter', 'Latex');
 set(groot,'DefaultLegendInterpreter', 'Latex');
 
 %% Load Flight Data & Signals Convertion
-load FlightData\Standard_Const_5_2.mat
-SoftKite_TL
+%load FlightData\Standard_Step.mat
+%SoftKite_TL
 
-%load FlightData\Kitemill_90S.mat
-%Kitemill_TL
+% Additionally, in TL, get 
+%   - L_dot
+%   - beta 
 
+load FlightData\Kitemill_Full_180S.mat
+Kitemill_TL
+
+%% Flags 
+
+AeroCoeffMode = "mean";      % mean or real 
 
 %% Computation of Equivalent Kite Aerodynamic Efficiency 
+
 % There are 2 ways to compute beta (AoA variation)
 % There are 2 ways to compute E_eq (base and approx)
-C_L = mean(Cl_sim)*ones(size(Cl_sim));
-C_D = mean(Cd_sim)*ones(size(Cd_sim)); 
-%C_L = Cl_sim;
-%C_D = Cd_sim;
+if AeroCoeffMode == "mean"
+    C_L = mean(Cl_sim)*ones(size(Cl_sim));
+    C_D = mean(Cd_sim)*ones(size(Cd_sim)); 
+elseif AeroCoeffMode == "real"
+    C_L = Cl_sim;
+    C_D = Cd_sim;
+end
+
 %n_line = 1;
 r_l = vecnorm(pos')'; % equivalent to states.signals.values(:,5)
-beta = alpha.signals.values - alpha_0; %SoftKite
 
 % Alternative and equivalent computation of beta (from definition)
-%   This ofc cannot be used in practice, since we don't have We
+%   This ofc cannot be used in practice, since we don't have We (bc of W)
 %We = W - posDot;
 %beta = pi/2 - acos(dot(We, pos, 2)./(vecnorm(We')'.*vecnorm(pos')'));
 
@@ -52,7 +63,7 @@ sgtitle('Equivalent Kite Aerodyn Efficiency')
 % The 2 methods seems to match up well, the base should be less prone to
 % wrong assumptions, and should be more constant 
 
-%% Computation of |W_er| 
+%% Computation of |W_er| and comparison with real one
 % There are 2 methods to compute it (traction or speed method)
 
 W_er_norm_vec = zeros(length(F_T_norm),4);
@@ -102,7 +113,7 @@ fprintf("approx_validity: %.3f  %.3f  %.3f  %.3f\n",approx_validity);
 
 %% Absolute Wind Recovery with Least Squares Approach
 
-typeIndex = 3; 
+typeIndex = 2; 
 % Selection of the type of |W_e,r|
 %   1: base + traction
 %   2: base + speed
@@ -110,13 +121,13 @@ typeIndex = 3;
 %   4: approx + speed
 
 W_er_norm = W_er_norm_vec(:,typeIndex);  
-L_dot = statesdot.signals.values(:,5); % unwinding/winding speed
+
 l = pos./vecnorm(pos,2,2); % kite position versor
 
-blockSize = 273; % Size of the block/window 
-initStep = 200; % Starting point, includes a left-truncation
-maxStep = 6001; % Shouldn't exceed length(l)
-noZ = 1;        % Remove the computation of Wz (1 = yes, 0 = no)
+blockSize =1700; % Size of the block/window 
+initStep = 500; % Starting point, includes a left-truncation
+maxStep = 10000; % Shouldn't exceed length(l)
+noZ = 0;        % Remove the computation of Wz (1 = yes, 0 = no)
 
 %[W_est, iSequence] = blockLS(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ);
 
@@ -135,13 +146,13 @@ plot(loop_period), yline(blockSize, 'r--', 'LineWidth', 4), hold off
 figure, grid on, hold on,
 subplot(3,1,1), grid on, hold on
 plot(W_est(:,1));
-plot(W(1:maxStep,1),'--'), xlim([1 6000]), ylim([-1 15]), hold off
+plot(W(1:maxStep,1),'--'), %xlim([1 6000]), ylim([-1 15]), hold off
 subplot(3,1,2), grid on, hold on
 plot(W_est(:,2));
-plot(W(1:maxStep,2),'--'), xlim([1 6000]), ylim([-1 5]), hold off
+plot(W(1:maxStep,2),'--'), %xlim([1 6000]), ylim([-1 5]), hold off
 subplot(3,1,3), grid on, hold on
 plot(W_est(:,3));
-plot(W(1:maxStep,3),'--'), xlim([1 6000]), hold off
+plot(W(1:maxStep,3),'--'), %xlim([1 6000]), hold off
 sgtitle("Estimation Results")
 
 %% Filtering 
@@ -191,5 +202,11 @@ sgtitle("Estimation Results")
 % meanX_fil = mean(W_est_rec_fil(:,1))
 % meanY_fil = mean(W_est_rec_fil(:,2))
 % meanZ_fil = mean(W_est_rec_fil(:,3))
-
 %% Hyperparameter optimization?
+
+%% Alternative approach
+% The method works well for constant wind. Then, another idea can be 
+% to divide the flight data into heights segmentes, where we can suppose
+% constant wind, and estimate there. 
+% We can then reconstruct the wind profile by merging the estimation in
+% the various heights

@@ -5,6 +5,8 @@ f = figure;
 labels = [];
 f.Position = [400 200 1200 500];
 
+start_filter = max(start_filter - N_start, 0);
+
 %% Plot Wind Profile
 
 subplot(1,2,1);
@@ -20,7 +22,7 @@ if DataFlag == "SoftKite"
 end
 
 % Estimated Wind Points
-Est_Wind_Height = [W0_vec(start_filter:end,1:2), heights(start_filter:end)];
+Est_Wind_Height = [W0_vec(start_filter+1:end,1:2), heights(start_filter+1:end)];
 Est_Wind_Height = sortrows(Est_Wind_Height, size(Est_Wind_Height,2));
 x_est = Est_Wind_Height(:,end);
 y_est = Est_Wind_Height(:,1);
@@ -29,7 +31,7 @@ plot(y_est,x_est, 'o', 'Color', [0 0.5 0.5]);
 labels = [labels, {'Estimated'}];
 
 % Real(Flown) Wind Points
-Act_Wind_Height = [W(N_start+start_filter:N_end,1:2), heights(N_start+start_filter:end)];
+Act_Wind_Height = [W(N_start+start_filter:N_end,1:2), heights(start_filter+1:end)];
 Act_Wind_Height = sortrows(Act_Wind_Height, 3);
 x_act = Act_Wind_Height(:,end);
 y_act = Act_Wind_Height(:,1);
@@ -41,8 +43,8 @@ labels = [labels, {'Real'}];
 % Divide the flown heights in segements, for each clamp the results to the
 % lower bound and compute mean and std
 ref_heights = linspace(min(heights), max(heights), segments+1);
-Est_WindX_meanstd = zeros(size(ref_heights,2)-1,3);
-Est_WindDir_meanstd = zeros(size(ref_heights,2)-1,3);
+Est_WindX_meanstd = zeros(length(ref_heights)-1,3);
+Est_WindDir_meanstd = zeros(length(ref_heights)-1,3);
 for i = 1:size(ref_heights,2)-1
     h_ind = find(Est_Wind_Height(:,3)>= ref_heights(i) & Est_Wind_Height(:,3)< ref_heights(i+1));
     Est_WindX_meanstd(i,:) = [mean(Est_Wind_Height(h_ind,1)), std(Est_Wind_Height(h_ind,1)), ref_heights(i)];
