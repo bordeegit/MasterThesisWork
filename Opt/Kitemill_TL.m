@@ -9,7 +9,6 @@ F_T_norm = out.logsout.get("F_winch").Values.Data;     % Tether Force Magnitude
 W = out.logsout.get("wind speed").Values.Data;                  % Absolute Wind (xyz)
 Cd_sim = out.logsout.get("CD").Values.Data;                % Cd at each point
 Cl_sim = out.logsout.get("CL").Values.Data;                % Cl at each point
-% Check if Cd and Cl are not inverted 
 
 % For LS approach  
 L_dot = vecnorm(out.logsout.get('xyhdot').Values.Data')'; % (taut) Cable unwinding/winding speed 

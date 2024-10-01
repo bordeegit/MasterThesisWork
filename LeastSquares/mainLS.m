@@ -8,15 +8,15 @@ set(groot,'DefaultAxesTickLabelInterpreter', 'Latex');
 set(groot,'DefaultLegendInterpreter', 'Latex');
 
 %% Load Flight Data & Signals Convertion
-%load FlightData\Standard_Step.mat
-%SoftKite_TL
+load FlightData\Standard_Step.mat
+SoftKite_TL
 
 % Additionally, in TL, get 
 %   - L_dot
 %   - beta 
 
-load FlightData\Kitemill_Full_180S.mat
-Kitemill_TL
+%load FlightData\Kitemill_90S.mat
+%Kitemill_TL
 
 %% Flags 
 
@@ -42,23 +42,28 @@ r_l = vecnorm(pos')'; % equivalent to states.signals.values(:,5)
 %We = W - posDot;
 %beta = pi/2 - acos(dot(We, pos, 2)./(vecnorm(We')'.*vecnorm(pos')'));
 
-C_Deq = C_D.*(1 + (parameters.n_l*r_l*parameters.d_l*parameters.Cd_l.*cos(beta))./(4*parameters.A*C_D));
+% Assuming beta small, cos(beta) ~ 1, so we can neglect it 
+%   Also, we can use mean C_D values so that it's feasible in practice
+%C_Deq = C_D.*(1 + (parameters.n_l*r_l*parameters.d_l*parameters.Cd_l.*cos(beta))./(4*parameters.A*C_D));
+C_Deq = C_D.*(1 + (parameters.n_l*r_l*parameters.d_l*parameters.Cd_l)./(4*parameters.A*C_D));
 
 % NOTE: The introduction of beta gives minimal difference, the 
 %       difference is 2 orders of magnitude less than the absolute value 
 %       However, beta is used in the second method
 
 E_eq_1 = C_L./C_Deq;
+% This cannot be used bc we cannot have beta, we would need to know the AoA
+% which is not know 
 E_eq_2 = cos(beta)./sin(beta); % Equivalent to 1./tan(beta)
-
-figure, 
-subplot(2,1,1), grid on, hold on;
-plot(E_eq_1), plot(E_eq_2), xlim([0;6000])
-legend('base method','approx method', 'Location','southeast' ), hold off
-subplot(2,1,2), 
-plot(E_eq_1-E_eq_2), grid on, xlim([0;6000]);
-legend('Difference b/w methods')
-sgtitle('Equivalent Kite Aerodyn Efficiency')
+% 
+% figure, 
+% subplot(2,1,1), grid on, hold on;
+% plot(E_eq_1), plot(E_eq_2), xlim([0;6000])
+% legend('base method','approx method', 'Location','southeast' ), hold off
+% subplot(2,1,2), 
+% plot(E_eq_1-E_eq_2), grid on, xlim([0;6000]);
+% legend('Difference b/w methods')
+% sgtitle('Equivalent Kite Aerodyn Efficiency')
 
 % The 2 methods seems to match up well, the base should be less prone to
 % wrong assumptions, and should be more constant 
@@ -113,7 +118,7 @@ fprintf("approx_validity: %.3f  %.3f  %.3f  %.3f\n",approx_validity);
 
 %% Absolute Wind Recovery with Least Squares Approach
 
-typeIndex = 2; 
+typeIndex = 3; 
 % Selection of the type of |W_e,r|
 %   1: base + traction
 %   2: base + speed
@@ -124,10 +129,10 @@ W_er_norm = W_er_norm_vec(:,typeIndex);
 
 l = pos./vecnorm(pos,2,2); % kite position versor
 
-blockSize =1700; % Size of the block/window 
-initStep = 500; % Starting point, includes a left-truncation
-maxStep = 10000; % Shouldn't exceed length(l)
-noZ = 0;        % Remove the computation of Wz (1 = yes, 0 = no)
+blockSize = 3; % Size of the block/window 
+initStep = 50; % Starting point, includes a left-truncation
+maxStep = 6000; % Shouldn't exceed length(l)
+noZ = 1;        % Remove the computation of Wz (1 = yes, 0 = no)
 
 %[W_est, iSequence] = blockLS(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ);
 
@@ -145,8 +150,8 @@ plot(loop_period), yline(blockSize, 'r--', 'LineWidth', 4), hold off
 % Results
 figure, grid on, hold on,
 subplot(3,1,1), grid on, hold on
-plot(W_est(:,1));
-plot(W(1:maxStep,1),'--'), %xlim([1 6000]), ylim([-1 15]), hold off
+plot(0.01:0.01:60,W_est(:,1));
+plot(0.01:0.01:60,W(1:maxStep,1),'--'), %xlim([1 6000]), ylim([-1 15]), hold off
 subplot(3,1,2), grid on, hold on
 plot(W_est(:,2));
 plot(W(1:maxStep,2),'--'), %xlim([1 6000]), ylim([-1 5]), hold off
@@ -154,6 +159,12 @@ subplot(3,1,3), grid on, hold on
 plot(W_est(:,3));
 plot(W(1:maxStep,3),'--'), %xlim([1 6000]), hold off
 sgtitle("Estimation Results")
+
+% Testing where the error accours, clamping high spikes
+error = W -[0,0,0;W_est];
+error(error(:,1) > 12, 1) = 12;     
+error(error(:,2) < -32, 2) = -32;  
+printTraj(pos, error , N_start, N_end, "hot")
 
 %% Filtering 
 % Initial testing with simple threshold approach

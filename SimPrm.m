@@ -54,6 +54,9 @@ mt_noL = n_line*Line_diameter^2*pi*Line_density;
 
 %%%%% Wind Parameters %%%%%
 %% SHEAR WIND MODEL
+    Z0_Tr = 32.5;
+    W0_Tr = 6.4;
+    Zr_Tr = 3.2e-6;
 %     hr=32.5;                                        % Wind shear model
 %     phi_wr = 30*pi/180;
 %     %phi_wr = 150*pi/180;

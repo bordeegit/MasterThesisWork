@@ -1,5 +1,5 @@
 % Flags for Specific plotting
-DataFlag = "SoftKite";
+%DataFlag = "SoftKite";
 
 % Signals
 pos = Position.signals.values;             % Position in Global frame

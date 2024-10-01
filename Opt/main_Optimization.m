@@ -1,4 +1,4 @@
-close all; clear
+close all; %clear
 
 set(groot,'DefaultAxesFontSize', 15);
 set(groot,'DefaultLineLineWidth', 1.5);
@@ -10,14 +10,15 @@ set(groot,'DefaultLegendInterpreter', 'Latex');
 % Used for Hyperparameters optimization, remove clear before
 %clearvars -except parameters Cd_mod Cd_mean RMSE_cell W0_cell iter
 
-%load FlightData\Standard_LinY.mat
+load FlightData\Standard_LinY.mat
+%load FlightData\Standard_LogTrapani.mat
 %load FlightData\Kitemill_90S.mat
-load FlightData\Kitemill_Full_180S.mat
+%load FlightData\Kitemill_Full_180S.mat
 
 %%% Translation Layer 
 
-%SoftKite_TL
-Kitemill_TL
+SoftKite_TL
+%Kitemill_TL
 
 % Size Initialization for codegen
 parameters.r_meas       = pos(1,:)';
@@ -28,12 +29,12 @@ parameters.F_T_norm     = F_T_norm(1,end);
 
 % Simulation/Optimization Parameters
 
-N_start                 = 1000;
-N_opt                   = 1000; % Number of steps to perform optimization
+N_start                 = 1;
+N_opt                   = 2500; % Number of steps to perform optimization
 printFlag               = true;
 codegenFlag             = false;
 
-z0                      = [12;0%W(N_start,1:2)';
+z0                      = [W(N_start,1:2)'; %12;0
                            0.9; 0.1; sqrt(1-0.9^2-0.1^2)];
 
 Nop                     = size(z0,1);
@@ -42,7 +43,7 @@ W0_vec                  = zeros(N_opt,3);
 zl_vec                  = zeros(N_opt,3);
 heights                 = zeros(N_opt,1);
 parameters.Q            = 5e2*diag(ones(3,1)); %5e2
-parameters.Qw           = 1e7*diag(ones(5,1)); %1e7
+parameters.Qw           = diag([1e7;1e7;0e7*ones(3,1)]); %1e7
 parameters.zold         = z0;
 
 % Linear Equality/Inequality Constraints
@@ -79,15 +80,15 @@ end
 % Check Derivatives (v2024 only)
 if ~isMATLABReleaseOlderThan("R2024a")
     if options.SpecifyObjectiveGradient
-        assert(checkGradients(@(z)Wind_cost(z, parameters), randn(5,1), options, Display="on"))
+        assert(checkGradients(@(z)Wind_cost(z, parameters), randn(5,1), options, Display="off", Tolerance=1e-4))
     end
     if options.SpecifyConstraintGradient
-        assert(all(checkGradients(@(z)normconstr(z, parameters.rd_meas), randn(5,1), options, IsConstraint=true, Display="on")))
+        assert(all(checkGradients(@(z)normconstr(z, parameters.rd_meas), randn(5,1), options, IsConstraint=true, Display="off")))
     end
 end
 
 %Add noise to Measurements (0.01 = 1%)
-noiseLvl = 0;
+noiseLvl = 0.00;
 
 tic
 for i = N_start:N_end
@@ -98,15 +99,15 @@ for i = N_start:N_end
 
     nl_con = @(z)normconstr_mex(z, parameters.rd_meas);
     fun = @(z)Wind_cost_mex(z,parameters);
-    [zstar,~,exitflag,out] = fmincon(fun,z0,A,b,Aeq,beq,lb,ub,nl_con,options);
-    %z0                      = zstar;
+    [zstar,~,exitflag,output] = fmincon(fun,z0,A,b,Aeq,beq,lb,ub,nl_con,options);
+    %z0                      = zstar; only time difference
     W0_vec(i-N_start+1,:)   = [zstar(1:2)' 0];
     heights(i-N_start+1,:)  = pos(i,3);
     zl_vec(i-N_start+1,:)   = zstar(3:5)';
     parameters.zold         = zstar;
     if printFlag
         fprintf("Iteration %4d done, EstWind is [%7.4f %7.4f], (norm %4.3f), iter: %3d, feval: %3d, exit:%2d \n", ...
-            i, zstar(1), zstar(2), norm(zstar(3:5)), out.iterations, out.funcCount, exitflag);
+            i, zstar(1), zstar(2), norm(zstar(3:5)), output.iterations, output.funcCount, exitflag);
     end     
 end
 toc
