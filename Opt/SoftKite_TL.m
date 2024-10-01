@@ -12,7 +12,10 @@ Cl_sim = Cl.signals.values;                % Cl at each point
 
 % For LS approach
 L_dot = statesdot.signals.values(:,5);     % Cable unwinding/winding speed
-beta = alpha.signals.values - alpha_0;     % AoA variation
+%beta = alpha.signals.values - alpha_0;     % AoA variation
+th = pi/2 - theta.signals.values;
+thd = - thetadot.signals.values;
+phid = phidot.signals.values;
 
 % Structural Parameters
 parameters.rho          = rho;

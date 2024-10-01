@@ -8,7 +8,7 @@ set(groot,'DefaultAxesTickLabelInterpreter', 'Latex');
 set(groot,'DefaultLegendInterpreter', 'Latex');
 
 %% Load Flight Data & Signals Convertion
-% load FlightData\Standard_Step.mat
+% load FlightData\Standard_Const_5_2.mat
 % SoftKite_TL
 
 % Additionally, in TL, get 
@@ -68,12 +68,23 @@ E_eq = C_L./C_Deq;
 % The 2 methods seems to match up well, the base should be less prone to
 % wrong assumptions, and should be more constant 
 
+%% Computation of F_app_r and testing
+
+% Checked that it is the same as the projection below
+%F_grav_r = parameters.mk*parameters.g.*cos(pi/2 - theta.signals.values);
+
+
+
+F_app_r = parameters.mk*(r_l.*thd.^2 + r_l.*phid.^2.*sin(th).^2);
+
 %% Computation of |W_er| and comparison with real one
 % There are 2 methods to compute it (traction or speed method)
 
+F_gr = dot(repmat([0,0,parameters.mk*parameters.g], length(F_T_norm),1),pos./vecnorm(pos,2,2), 2); 
+%F_appr = 
 W_er_norm_vec = zeros(length(F_T_norm),2);
 C = 0.5*parameters.rho*parameters.A*C_L.*E_eq.^2.*(1+1./E_eq.^2).^(3/2);
-W_er_norm_vec(:,1) = sqrt(F_T_norm./C); % Traction approach
+W_er_norm_vec(:,1) = sqrt((F_T_norm - F_gr - F_app_r)./C);  % Traction approach
 W_er_norm_vec(:,2) = vecnorm(posDot')'./E_eq;  % Speed approach
 
 W_er_norm_real = dot((W - posDot), pos./vecnorm(pos,2,2), 2);
@@ -107,7 +118,7 @@ fprintf("approx_validity: %.3f  %.3f\n",approx_validity);
 
 %% Absolute Wind Recovery with Least Squares Approach
 
-typeIndex = 2; 
+typeIndex = 1; 
 % Selection of the type of |W_e,r|
 %   1: traction
 %   2: speed
@@ -117,7 +128,7 @@ W_er_norm = W_er_norm_vec(:,typeIndex);
 l = pos./vecnorm(pos,2,2); % kite position versor
 
 blockSize = 3; % Size of the block/window 
-initStep = 50; % Starting point, includes a left-truncation
+initStep = 100; % Starting point, includes a left-truncation
 maxStep = 6000; % Shouldn't exceed length(l)
 noZ = 1;        % Remove the computation of Wz (1 = yes, 0 = no)
 
@@ -149,12 +160,12 @@ sgtitle("Estimation Results")
 
 % Testing where the error accours, clamping high spikes
 error = W(1:maxStep+1,:) -[0,0,0;W_est];
-error(error(:,1) > 200, 1) = 200; 
-error(error(:,1) < -200, 1) = -200; 
-error(error(:,2) > 200, 2) = 200; 
-error(error(:,2) < -200, 2) = -200; 
-%error(error(:,1) > 12, 1) = 12;     
-%error(error(:,2) < -32, 2) = -32;  
+% error(error(:,1) > 200, 1) = 200; 
+% error(error(:,1) < -200, 1) = -200; 
+% error(error(:,2) > 200, 2) = 200; 
+% error(error(:,2) < -200, 2) = -200; 
+error(error(:,1) > 12, 1) = 12;     
+error(error(:,2) < -32, 2) = -32;  
 printTraj(pos, error , initStep, maxStep, "hot")
 
 %% Filtering 
