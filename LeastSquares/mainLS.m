@@ -8,15 +8,15 @@ set(groot,'DefaultAxesTickLabelInterpreter', 'Latex');
 set(groot,'DefaultLegendInterpreter', 'Latex');
 
 %% Load Flight Data & Signals Convertion
-load FlightData\Standard_Step.mat
-SoftKite_TL
+% load FlightData\Standard_Step.mat
+% SoftKite_TL
 
 % Additionally, in TL, get 
 %   - L_dot
 %   - beta 
 
-%load FlightData\Kitemill_90S.mat
-%Kitemill_TL
+load FlightData\Kitemill_90S.mat
+Kitemill_TL
 
 %% Flags 
 
@@ -51,10 +51,10 @@ C_Deq = C_D.*(1 + (parameters.n_l*r_l*parameters.d_l*parameters.Cd_l)./(4*parame
 %       difference is 2 orders of magnitude less than the absolute value 
 %       However, beta is used in the second method
 
-E_eq_1 = C_L./C_Deq;
+E_eq = C_L./C_Deq;
 % This cannot be used bc we cannot have beta, we would need to know the AoA
 % which is not know 
-E_eq_2 = cos(beta)./sin(beta); % Equivalent to 1./tan(beta)
+% E_eq_2 = cos(beta)./sin(beta); % Equivalent to 1./tan(beta)
 % 
 % figure, 
 % subplot(2,1,1), grid on, hold on;
@@ -71,37 +71,26 @@ E_eq_2 = cos(beta)./sin(beta); % Equivalent to 1./tan(beta)
 %% Computation of |W_er| and comparison with real one
 % There are 2 methods to compute it (traction or speed method)
 
-W_er_norm_vec = zeros(length(F_T_norm),4);
-i = 1;
-for E_eq = [E_eq_1,E_eq_2]
-    C = 0.5*parameters.rho*parameters.A*C_L.*E_eq.^2.*(1+1./E_eq.^2).^(3/2);
-    W_er_norm_vec(:,i) = sqrt(F_T_norm./C); % Traction approach
-    W_er_norm_vec(:,i+1) = vecnorm(posDot')'./E_eq;  % Speed approach
-    i = i+2;
-end
+W_er_norm_vec = zeros(length(F_T_norm),2);
+C = 0.5*parameters.rho*parameters.A*C_L.*E_eq.^2.*(1+1./E_eq.^2).^(3/2);
+W_er_norm_vec(:,1) = sqrt(F_T_norm./C); % Traction approach
+W_er_norm_vec(:,2) = vecnorm(posDot')'./E_eq;  % Speed approach
 
 W_er_norm_real = dot((W - posDot), pos./vecnorm(pos,2,2), 2);
 
 figure
 subplot(2,1,1), grid on, hold on
 plot(W_er_norm_vec(:,1)), plot(W_er_norm_vec(:,2))
-plot(W_er_norm_vec(:,3)), plot(W_er_norm_vec(:,4))
 plot(W_er_norm_real)
 title('Values'),xlim([0;6000]) 
-legend('traction base', 'speed base', 'traction approx', 'speed approx', 'real', 'Location','southeast'), hold off
+legend('traction', 'speed', 'real', 'Location','southeast'), hold off
 subplot(2,1,2), grid on, hold on
 plot(W_er_norm_vec - W_er_norm_real)
-% TODO: Ha senso fare grafico delle 4 differenze tra approx e reali?
-
-%plot(W_er_norm_vec(:,1) - W_er_norm_vec(:,2))
-%plot(W_er_norm_vec(:,3) - W_er_norm_vec(:,4))
-%plot(W_er_norm_vec(:,1) - W_er_norm_vec(:,3))
-%plot(W_er_norm_vec(:,2) - W_er_norm_vec(:,4))
 title("Differences"), xlim([0;6000])
-legend('base E eq','approx E eq', 'traction', 'speed', 'Location','southeast' ), hold off
-sgtitle('$\mathbf{|\vec{W}_{e,r}|}$', 'Interpreter','latex') 
+legend('traction', 'speed', 'Location','southeast' ), hold off
+sgtitle('$\mathbf{|\vec{W}_{e,r}|}$') 
 approx_validity = vecnorm(W_er_norm_vec - W_er_norm_real);
-fprintf("approx_validity: %.3f  %.3f  %.3f  %.3f\n",approx_validity);
+fprintf("approx_validity: %.3f  %.3f\n",approx_validity);
 
 % The computation of W_e,r with the unapproximaed method of computation of 
 % E_eq produces a lot less spikes, as it can be deduced from the plots of 
@@ -118,12 +107,10 @@ fprintf("approx_validity: %.3f  %.3f  %.3f  %.3f\n",approx_validity);
 
 %% Absolute Wind Recovery with Least Squares Approach
 
-typeIndex = 3; 
+typeIndex = 2; 
 % Selection of the type of |W_e,r|
-%   1: base + traction
-%   2: base + speed
-%   3: approx + traction
-%   4: approx + speed
+%   1: traction
+%   2: speed
 
 W_er_norm = W_er_norm_vec(:,typeIndex);  
 
@@ -161,10 +148,14 @@ plot(W(1:maxStep,3),'--'), %xlim([1 6000]), hold off
 sgtitle("Estimation Results")
 
 % Testing where the error accours, clamping high spikes
-error = W -[0,0,0;W_est];
-error(error(:,1) > 12, 1) = 12;     
-error(error(:,2) < -32, 2) = -32;  
-printTraj(pos, error , N_start, N_end, "hot")
+error = W(1:maxStep+1,:) -[0,0,0;W_est];
+error(error(:,1) > 200, 1) = 200; 
+error(error(:,1) < -200, 1) = -200; 
+error(error(:,2) > 200, 2) = 200; 
+error(error(:,2) < -200, 2) = -200; 
+%error(error(:,1) > 12, 1) = 12;     
+%error(error(:,2) < -32, 2) = -32;  
+printTraj(pos, error , initStep, maxStep, "hot")
 
 %% Filtering 
 % Initial testing with simple threshold approach
