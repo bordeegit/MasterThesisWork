@@ -8,15 +8,15 @@ set(groot,'DefaultAxesTickLabelInterpreter', 'Latex');
 set(groot,'DefaultLegendInterpreter', 'Latex');
 
 %% Load Flight Data & Signals Convertion
-% load FlightData\Standard_Const_5_2.mat
-% SoftKite_TL
+% Additionally, in TL, get L_dot
 
-% Additionally, in TL, get 
-%   - L_dot
-%   - beta 
+ load FlightData\Standard_Step.mat
+ SoftKite_TL
 
-load FlightData\Kitemill_90S.mat
-Kitemill_TL
+% load FlightData\Kitemill_90S.mat
+% Kitemill_TL
+
+%RealFlightTL
 
 %% Flags 
 
@@ -24,8 +24,6 @@ AeroCoeffMode = "mean";      % mean or real
 
 %% Computation of Equivalent Kite Aerodynamic Efficiency 
 
-% There are 2 ways to compute beta (AoA variation)
-% There are 2 ways to compute E_eq (base and approx)
 if AeroCoeffMode == "mean"
     C_L = mean(Cl_sim)*ones(size(Cl_sim));
     C_D = mean(Cd_sim)*ones(size(Cd_sim)); 
@@ -34,24 +32,24 @@ elseif AeroCoeffMode == "real"
     C_D = Cd_sim;
 end
 
-%n_line = 1;
 r_l = vecnorm(pos')'; % equivalent to states.signals.values(:,5)
 
+% Assuming beta small, cos(beta) ~ 1, so we can neglect it
+%   C_Deq = C_D.*(1 + (parameters.n_l*r_l*parameters.d_l*parameters.Cd_l.*cos(beta))./(4*parameters.A*C_D));
+C_Deq = C_D.*(1 + (parameters.n_l*r_l*parameters.d_l*parameters.Cd_l)./(4*parameters.A*C_D));
+
+E_eq = C_L./C_Deq; % Equivalent Kite Aerodynamic Efficiency 
+
+%% Notes on the approach with beta
+% NOTE: The introduction of beta gives minimal difference, the 
+%       difference is 2 orders of magnitude less than the absolute value 
+%       However, beta is used in the second method
+%
 % Alternative and equivalent computation of beta (from definition)
 %   This ofc cannot be used in practice, since we don't have We (bc of W)
 %We = W - posDot;
 %beta = pi/2 - acos(dot(We, pos, 2)./(vecnorm(We')'.*vecnorm(pos')'));
-
-% Assuming beta small, cos(beta) ~ 1, so we can neglect it 
-%   Also, we can use mean C_D values so that it's feasible in practice
-%C_Deq = C_D.*(1 + (parameters.n_l*r_l*parameters.d_l*parameters.Cd_l.*cos(beta))./(4*parameters.A*C_D));
-C_Deq = C_D.*(1 + (parameters.n_l*r_l*parameters.d_l*parameters.Cd_l)./(4*parameters.A*C_D));
-
-% NOTE: The introduction of beta gives minimal difference, the 
-%       difference is 2 orders of magnitude less than the absolute value 
-%       However, beta is used in the second method
-
-E_eq = C_L./C_Deq;
+%
 % This cannot be used bc we cannot have beta, we would need to know the AoA
 % which is not know 
 % E_eq_2 = cos(beta)./sin(beta); % Equivalent to 1./tan(beta)
@@ -65,26 +63,22 @@ E_eq = C_L./C_Deq;
 % legend('Difference b/w methods')
 % sgtitle('Equivalent Kite Aerodyn Efficiency')
 
-% The 2 methods seems to match up well, the base should be less prone to
-% wrong assumptions, and should be more constant 
-
 %% Computation of F_app_r and testing
 
-% Checked that it is the same as the projection below
-%F_grav_r = parameters.mk*parameters.g.*cos(pi/2 - theta.signals.values);
+% Checked that F_gr is the same as the a priori projection below
+%F_grav_r = parameters.mk*parameters.g.*cos(th);
 
-
-
-F_app_r = parameters.mk*(r_l.*thd.^2 + r_l.*phid.^2.*sin(th).^2);
+% Apparent force projected on the cable
+%F_app_r = parameters.mk*(r_l.*thd.^2 + r_l.*phid.^2.*sin(th).^2);
 
 %% Computation of |W_er| and comparison with real one
 % There are 2 methods to compute it (traction or speed method)
 
 F_gr = dot(repmat([0,0,parameters.mk*parameters.g], length(F_T_norm),1),pos./vecnorm(pos,2,2), 2); 
-%F_appr = 
 W_er_norm_vec = zeros(length(F_T_norm),2);
 C = 0.5*parameters.rho*parameters.A*C_L.*E_eq.^2.*(1+1./E_eq.^2).^(3/2);
-W_er_norm_vec(:,1) = sqrt((F_T_norm - F_gr - F_app_r)./C);  % Traction approach
+%W_er_norm_vec(:,1) = sqrt(abs(F_T_norm./cos(Psi.signals.values) - F_gr - F_app_r)./C);  % Traction approach
+W_er_norm_vec(:,1) = sqrt(abs(F_T_norm - F_gr)./C);  % Traction approach
 W_er_norm_vec(:,2) = vecnorm(posDot')'./E_eq;  % Speed approach
 
 W_er_norm_real = dot((W - posDot), pos./vecnorm(pos,2,2), 2);
@@ -103,25 +97,16 @@ sgtitle('$\mathbf{|\vec{W}_{e,r}|}$')
 approx_validity = vecnorm(W_er_norm_vec - W_er_norm_real);
 fprintf("approx_validity: %.3f  %.3f\n",approx_validity);
 
-% The computation of W_e,r with the unapproximaed method of computation of 
-% E_eq produces a lot less spikes, as it can be deduced from the plots of 
-% E_eq_1 and E_eq_2 
-
-% Considering the same Equivalent aerodynamic efficiency, the 2 methods of 
-% computation of W_e,r (traction and speed) produce very different results;
-% in particular, the speed approach more spikes, and in general has a more 
-% erratic behivour
-
 % The best one can be found with min(vecnorm(W_er_norm_vec - W_er_norm_real))
-% Overall, the best choice seems to be approx E_eq + traction
+% Overall, the best choice seems to be the traction
 
 
 %% Absolute Wind Recovery with Least Squares Approach
 
-typeIndex = 1; 
 % Selection of the type of |W_e,r|
 %   1: traction
 %   2: speed
+typeIndex = 1; 
 
 W_er_norm = W_er_norm_vec(:,typeIndex);  
 
@@ -140,30 +125,24 @@ noZ = 1;        % Remove the computation of Wz (1 = yes, 0 = no)
 RMSE = rmse(W(iSequence,:), W_est(iSequence,:));
 fprintf("RMSE: %f, %f, %f, 2-norm: %f\n", RMSE, norm(RMSE));
 
-% Block size wrt loop Period
-loop_period = diff(find(diff(sign(diff(pos(initStep:maxStep,2))))==-2));
-figure, grid on, hold on,
-plot(loop_period), yline(blockSize, 'r--', 'LineWidth', 4), hold off
-
 % Results
 figure, grid on, hold on,
-subplot(3,1,1), grid on, hold on
-plot(0.01:0.01:60,W_est(:,1));
-plot(0.01:0.01:60,W(1:maxStep,1),'--'), %xlim([1 6000]), ylim([-1 15]), hold off
-subplot(3,1,2), grid on, hold on
-plot(W_est(:,2));
-plot(W(1:maxStep,2),'--'), %xlim([1 6000]), ylim([-1 5]), hold off
-subplot(3,1,3), grid on, hold on
-plot(W_est(:,3));
-plot(W(1:maxStep,3),'--'), %xlim([1 6000]), hold off
-sgtitle("Estimation Results")
+subplot(2,1,1), grid on, hold on
+plot(T_s:T_s:maxStep*T_s,W_est(:,1));
+plot(T_s:T_s:maxStep*T_s,W(1:maxStep,1),'--'), %xlim([1 6000]), ylim([-1 15]), hold off
+legend('Estimated $W_x$', 'Actual $W_x$'), ylim([-10 20])
+subplot(2,1,2), grid on, hold on
+plot(T_s:T_s:maxStep*T_s,W_est(:,2));
+plot(T_s:T_s:maxStep*T_s,W(1:maxStep,2),'--'), %xlim([1 6000]), ylim([-1 5]), hold off
+legend('Estimated $W_y$', 'Actual $W_y$'), ylim([-60 60])
+linkaxes([subplot(2,1,1), subplot(2,1,2)], 'xy');  % Link both x and y axes
+%subplot(3,1,3), grid on, hold on
+%plot(W_est(:,3));
+%plot(W(1:maxStep,3),'--'), %xlim([1 6000]), hold off
+%sgtitle("$Estimation Results$")
 
 % Testing where the error accours, clamping high spikes
-error = W(1:maxStep+1,:) -[0,0,0;W_est];
-% error(error(:,1) > 200, 1) = 200; 
-% error(error(:,1) < -200, 1) = -200; 
-% error(error(:,2) > 200, 2) = 200; 
-% error(error(:,2) < -200, 2) = -200; 
+error = W(1:maxStep+1,:) -[0,0,0;W_est]; 
 error(error(:,1) > 12, 1) = 12;     
 error(error(:,2) < -32, 2) = -32;  
 printTraj(pos, error , initStep, maxStep, "hot")
@@ -217,9 +196,14 @@ printTraj(pos, error , initStep, maxStep, "hot")
 % meanZ_fil = mean(W_est_rec_fil(:,3))
 %% Hyperparameter optimization?
 
-%% Alternative approach
+%% Alternative approach and other code
 % The method works well for constant wind. Then, another idea can be 
 % to divide the flight data into heights segmentes, where we can suppose
 % constant wind, and estimate there. 
 % We can then reconstruct the wind profile by merging the estimation in
 % the various heights
+%
+% Block size wrt loop Period
+% loop_period = diff(find(diff(sign(diff(pos(initStep:maxStep,2))))==-2));
+% figure, grid on, hold on,
+% plot(loop_period), yline(blockSize, 'r--', 'LineWidth', 4), hold off

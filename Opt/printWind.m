@@ -1,4 +1,4 @@
-Xtime = (N_start:N_end)/100;
+Xtime = (N_start:N_end)*T_s;
 f = figure;
 f.Position = [300 300 1200 500];
 % Difference in Wind Magnitude in X direction
@@ -8,7 +8,7 @@ xlabel('Time (s)','Interpreter','latex'), grid on;
 ylabel('Speed (m/s)', 'Interpreter','latex');
 title('$W_x$', 'Interpreter','latex');
 legend('Actual $W_x$','Estimated $W_x$', 'Interpreter', 'latex');
-ylim([6 16]), grid on;
+grid on %,ylim([6 16]);
 
 % Difference in Wind Magnitude in Y direction
 subplot(1,2,2)

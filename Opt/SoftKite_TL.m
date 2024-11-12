@@ -2,6 +2,7 @@
 %DataFlag = "SoftKite";
 
 % Signals
+T_s = 0.01;
 pos = Position.signals.values;             % Position in Global frame
 posDot = PositionDot.signals.values;       % Speed in Global frame
 posDotDot = PositionDotDot.signals.values; % Acceleration in Global frame
@@ -20,11 +21,11 @@ phid = phidot.signals.values;
 % Structural Parameters
 parameters.rho          = rho;
 parameters.A            = area;
-parameters.mk           = mass;
-parameters.mt_noL       = mt_noL;
-parameters.g            = g;
 parameters.Cd_l         = CD_Line;
 parameters.d_l          = Line_diameter;
 parameters.n_l          = n_line;
+parameters.mk           = mass;
+parameters.mt_noL       = mt_noL;
+parameters.g            = g;
 parameters.Cd           = mean(Cd_sim);
 parameters.Cl           = mean(Cl_sim);

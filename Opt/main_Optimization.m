@@ -1,4 +1,4 @@
-close all; %clear
+close all; clear
 
 set(groot,'DefaultAxesFontSize', 15);
 set(groot,'DefaultLineLineWidth', 1.5);
@@ -10,15 +10,16 @@ set(groot,'DefaultLegendInterpreter', 'Latex');
 % Used for Hyperparameters optimization, remove clear before
 %clearvars -except parameters Cd_mod Cd_mean RMSE_cell W0_cell iter
 
-load FlightData\Standard_LinY.mat
+% load FlightData\Standard_LinY.mat
 %load FlightData\Standard_LogTrapani.mat
 %load FlightData\Kitemill_90S.mat
 %load FlightData\Kitemill_Full_180S.mat
 
 %%% Translation Layer 
 
-SoftKite_TL
+% SoftKite_TL
 %Kitemill_TL
+RealFlightTL
 
 % Size Initialization for codegen
 parameters.r_meas       = pos(1,:)';
@@ -31,7 +32,7 @@ parameters.F_T_norm     = F_T_norm(1,end);
 
 N_start                 = 1;
 N_opt                   = 2500; % Number of steps to perform optimization
-printFlag               = true;
+printFlag               = false;
 codegenFlag             = false;
 
 z0                      = [W(N_start,1:2)'; %12;0
@@ -53,7 +54,7 @@ A = [];
 b = [];
 
 % Bounds on W_x, W_y (can also add bound on components of zl)
-lb = [5;-2;-1;-1;-1];
+lb = [-20;-20;-1;-1;-1];
 ub = [20;20;1;1;1];
 
 
@@ -91,7 +92,7 @@ end
 noiseLvl = 0.00;
 
 tic
-for i = N_start:N_end
+for i = int32(N_start):int32(N_end)
     parameters.r_meas       = pos(i,:)' + noiseLvl.*pos(i,:)'.*randn(size(pos(i,:)))';
     parameters.rd_meas      = posDot(i,:)' + noiseLvl.*posDot(i,:)'.*randn(size(posDot(i,:)))';
     parameters.rdd_meas     = posDotDot(i,:)' + noiseLvl.*posDotDot(i,:)'.*randn(size(posDotDot(i,:)))';
@@ -105,7 +106,7 @@ for i = N_start:N_end
     heights(i-N_start+1,:)  = pos(i,3);
     zl_vec(i-N_start+1,:)   = zstar(3:5)';
     parameters.zold         = zstar;
-    if printFlag
+    if printFlag && mod(i,10) == 0
         fprintf("Iteration %4d done, EstWind is [%7.4f %7.4f], (norm %4.3f), iter: %3d, feval: %3d, exit:%2d \n", ...
             i, zstar(1), zstar(2), norm(zstar(3:5)), output.iterations, output.funcCount, exitflag);
     end     
