@@ -10,13 +10,13 @@ set(groot,'DefaultLegendInterpreter', 'Latex');
 %% Load Flight Data & Signals Convertion
 % Additionally, in TL, get L_dot
 
- load FlightData\Standard_Step.mat
- SoftKite_TL
+% load FlightData\Standard_Step.mat
+% SoftKite_TL
 
 % load FlightData\Kitemill_90S.mat
 % Kitemill_TL
 
-%RealFlightTL
+RealFlightTL
 
 %% Flags 
 
@@ -32,13 +32,14 @@ elseif AeroCoeffMode == "real"
     C_D = Cd_sim;
 end
 
-r_l = vecnorm(pos')'; % equivalent to states.signals.values(:,5)
+r_l = vecnorm(pos')'; 
 
 % Assuming beta small, cos(beta) ~ 1, so we can neglect it
 %   C_Deq = C_D.*(1 + (parameters.n_l*r_l*parameters.d_l*parameters.Cd_l.*cos(beta))./(4*parameters.A*C_D));
 C_Deq = C_D.*(1 + (parameters.n_l*r_l*parameters.d_l*parameters.Cd_l)./(4*parameters.A*C_D));
 
 E_eq = C_L./C_Deq; % Equivalent Kite Aerodynamic Efficiency 
+%E_eq = 5.3*ones(25001, 1);
 
 %% Notes on the approach with beta
 % NOTE: The introduction of beta gives minimal difference, the 
@@ -71,6 +72,8 @@ E_eq = C_L./C_Deq; % Equivalent Kite Aerodynamic Efficiency
 % Apparent force projected on the cable
 %F_app_r = parameters.mk*(r_l.*thd.^2 + r_l.*phid.^2.*sin(th).^2);
 
+% Both forces F_gr and F_app_r are negligible wrt to F_T_norm, 1000 vs 10
+
 %% Computation of |W_er| and comparison with real one
 % There are 2 methods to compute it (traction or speed method)
 
@@ -81,16 +84,16 @@ C = 0.5*parameters.rho*parameters.A*C_L.*E_eq.^2.*(1+1./E_eq.^2).^(3/2);
 W_er_norm_vec(:,1) = sqrt(abs(F_T_norm - F_gr)./C);  % Traction approach
 W_er_norm_vec(:,2) = vecnorm(posDot')'./E_eq;  % Speed approach
 
-W_er_norm_real = dot((W - posDot), pos./vecnorm(pos,2,2), 2);
+W_er_norm_real = dot((W - posDot), pos./r_l, 2); %(usare solo vento reale)
 
-figure
+figure,
 subplot(2,1,1), grid on, hold on
 plot(W_er_norm_vec(:,1)), plot(W_er_norm_vec(:,2))
 plot(W_er_norm_real)
 title('Values'),xlim([0;6000]) 
 legend('traction', 'speed', 'real', 'Location','southeast'), hold off
 subplot(2,1,2), grid on, hold on
-plot(W_er_norm_vec - W_er_norm_real)
+plot(W_er_norm_real - W_er_norm_vec)
 title("Differences"), xlim([0;6000])
 legend('traction', 'speed', 'Location','southeast' ), hold off
 sgtitle('$\mathbf{|\vec{W}_{e,r}|}$') 
@@ -112,88 +115,64 @@ W_er_norm = W_er_norm_vec(:,typeIndex);
 
 l = pos./vecnorm(pos,2,2); % kite position versor
 
-blockSize = 3; % Size of the block/window 
+blockSize = 4; % Size of the block/window 
 initStep = 100; % Starting point, includes a left-truncation
-maxStep = 6000; % Shouldn't exceed length(l)
+maxStep = 25000; % Shouldn't exceed length(l)
 noZ = 1;        % Remove the computation of Wz (1 = yes, 0 = no)
 
 %[W_est, iSequence] = blockLS(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ);
 
 [W_est, iSequence] = slidingLS(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ);
 
+% Smoothing 
+W_est_filt = smoothdata(W_est, "movmedian", [500 0], "omitnan"); % Causale
+
+
 % Performance Factors 
 RMSE = rmse(W(iSequence,:), W_est(iSequence,:));
-fprintf("RMSE: %f, %f, %f, 2-norm: %f\n", RMSE, norm(RMSE));
+fprintf("RMSE Raw: %f, %f, %f, 2-norm: %f\n", RMSE, norm(RMSE));
+RMSE = rmse(W(iSequence,:), W_est_filt(iSequence,:));
+fprintf("RMSE Filt: %f, %f, %f, 2-norm: %f\n", RMSE, norm(RMSE));
+disp(['For X, Estimated Mean is ' num2str(mean(W_est_filt(:,1), "omitnan"))...
+      ' and real mean is ' num2str(mean(W(1:maxStep,1)))])
+disp(['For Y, Estimated Mean is ' num2str(mean(W_est_filt(:,2), "omitnan"))...
+      ' and real mean is ' num2str(mean(W(1:maxStep,2)))])
 
-% Results
-figure, grid on, hold on,
-subplot(2,1,1), grid on, hold on
-plot(T_s:T_s:maxStep*T_s,W_est(:,1));
-plot(T_s:T_s:maxStep*T_s,W(1:maxStep,1),'--'), %xlim([1 6000]), ylim([-1 15]), hold off
-legend('Estimated $W_x$', 'Actual $W_x$'), ylim([-10 20])
-subplot(2,1,2), grid on, hold on
-plot(T_s:T_s:maxStep*T_s,W_est(:,2));
-plot(T_s:T_s:maxStep*T_s,W(1:maxStep,2),'--'), %xlim([1 6000]), ylim([-1 5]), hold off
-legend('Estimated $W_y$', 'Actual $W_y$'), ylim([-60 60])
-linkaxes([subplot(2,1,1), subplot(2,1,2)], 'xy');  % Link both x and y axes
-%subplot(3,1,3), grid on, hold on
-%plot(W_est(:,3));
-%plot(W(1:maxStep,3),'--'), %xlim([1 6000]), hold off
-%sgtitle("$Estimation Results$")
 
-% Testing where the error accours, clamping high spikes
-error = W(1:maxStep+1,:) -[0,0,0;W_est]; 
-error(error(:,1) > 12, 1) = 12;     
-error(error(:,2) < -32, 2) = -32;  
+% Plot Results
+if ~noZ n_subpl = 3; else n_subpl = 2; end
+figure, grid on, hold on, sgtitle("Estimation Results")
+subplot(n_subpl,1,1), grid on, hold on,
+plot(0:T_s:(maxStep-1)*T_s,W_est(:,1), 'Color', [0.565 0.808 0.98 0.1]);
+plot(0:T_s:(maxStep-1)*T_s,W_est_filt(:,1), 'Color', [0 0.4470 0.7410], 'LineWidth', 2);
+plot(0:T_s:(maxStep-1)*T_s,W(1:maxStep,1),'--', 'Color', [0.8500 0.3250 0.0980], 'LineWidth', 2), %xlim([1 6000]), ylim([-1 15]), hold off
+legend('Estimated $W_x$', 'Filtered $W_x$', 'Actual $W_x$'), ylim([-3 7])
+ylabel('Wind Speed (m/s)'), xlabel('Time (s)')
+subplot(n_subpl,1,2), grid on, hold on
+plot(0:T_s:(maxStep-1)*T_s,W_est(:,2), 'Color', [0.565 0.808 0.98 0.1]);
+plot(0:T_s:(maxStep-1)*T_s,W_est_filt(:,2), 'Color', [0 0.4470 0.7410], 'LineWidth', 2);
+plot(0:T_s:(maxStep-1)*T_s,W(1:maxStep,2),'--', 'Color', [0.8500 0.3250 0.0980], 'LineWidth', 2), %xlim([1 6000]), ylim([-1 5]), hold off
+legend('Estimated $W_y$', 'Filtered $W_y$', 'Actual $W_y$'), ylim([-3 7])
+ylabel('Wind Speed (m/s)'), xlabel('Time (s)') 
+if(~noZ)
+subplot(n_subpl,1,3), grid on, hold on,
+grid on, hold on, ylim([-5 10])
+plot(0:T_s:(maxStep-1)*T_s,W_est(:,3), 'Color', [0.565 0.808 0.98 0.1]);
+plot(0:T_s:(maxStep-1)*T_s,W_est_filt(:,3), 'Color', [0 0.4470 0.7410], 'LineWidth', 2);
+plot(0:T_s:(maxStep-1)*T_s,W(1:maxStep,3),'--', 'Color', [0.8500 0.3250 0.0980], 'LineWidth', 2), %xlim([1 6000]), ylim([-1 15]), hold off
+legend('Estimated $W_z$', 'Filtered $W_z$', 'Actual $W_z$'), ylim([-3 7])
+ylabel('Wind Speed (m/s)'), xlabel('Time (s)')
+end 
+linkaxes([subplot(n_subpl,1,1), subplot(n_subpl,1,2)], 'xy');  % Link both x and y axes
+
+% Errors 
+error = W(1:maxStep+1,:) - [0,0,0;W_est]; 
+error(error(:,1) > 20, 1) = 20; 
+error(error(:,1) < -20, 1) = -20; 
+error(error(:,2) > 20, 2) = 20;
+error(error(:,2) < -20, 2) = -20;  
 printTraj(pos, error , initStep, maxStep, "hot")
 
-%% Filtering 
-% Initial testing with simple threshold approach
-%   spike happen around the real/correct value, so a simple 
-%   |W_est_vals| < th can't work
-%
-% Used Matlab's DataCleaner App on VALUES, trial&error for params
-%   - filloutliers: remove spikes (moving median) and fill (lin interp) 
-%   - smoothdata: smooth data (moving mean with moving window)
-% W_est_trunc = W_est_vals(iFilterStart:end,:); % Skip first second 
-% W_est_table = array2table(W_est_trunc, 'VariableNames',{'Wx','Wy','Wz'});
-% W_est_table = filloutliers(W_est_table,"linear","movmedian",20,"DataVariables",["Wx","Wy"]);
-% W_est_table = smoothdata(W_est_table,"movmean",20,"DataVariables",["Wx","Wy"]);
-% W_est_vals_fil = table2array(W_est_table);
-% 
-% figure;
-% subplot(3,1,1)
-% plot(W_est_trunc(:,1), 'b-'), hold on, grid on,
-% plot(W_est_vals_fil(:,1), 'r-');
-% legend('Original','Filtered'), hold off;
-% subplot(3,1,2)
-% plot(W_est_trunc(:,2), 'b-'), hold on, grid on,
-% plot(W_est_vals_fil(:,2), 'r-');
-% legend('Original','Filtered'), hold off;
-% subplot(3,1,3)
-% plot(W_est_trunc(:,3), 'b-'), hold on, grid on,
-% plot(W_est_vals_fil(:,3), 'r-');
-% legend('Original','Filtered'), hold off;
-% sgtitle("Filtered values results")
-% 
-% W_est_rec_fil = kron(W_est_vals_fil, ones(blockSize,1));
-% 
-% figure, 
-% subplot(2,1,1), grid on,hold on
-% plot(W_est_rec(N_filter:end,1),'--', 'LineWidth', 1);
-% plot(W_est_rec_fil(:,1));
-% plot(W(N_filter:end,1)),
-% legend('Estimated', 'Filtered', 'Real'), ylim([-5;20]), hold off
-% subplot(2,1,2),grid on, hold on
-% plot(W_est_rec(N_filter:end,2), '--', 'LineWidth', 1);
-% plot(W_est_rec_fil(:,2));
-% plot(W(N_filter:end,2)),
-% legend('Estimated', 'Filtered', 'Real'), ylim([-5;20]), hold off
-% sgtitle("Filtered reconstructed results")
-% 
-% meanX_fil = mean(W_est_rec_fil(:,1))
-% meanY_fil = mean(W_est_rec_fil(:,2))
-% meanZ_fil = mean(W_est_rec_fil(:,3))
 %% Hyperparameter optimization?
 
 %% Alternative approach and other code
