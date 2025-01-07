@@ -31,9 +31,9 @@ parameters.F_T_norm     = F_T_norm(1,end);
 % Simulation/Optimization Parameters
 
 N_start                 = 1;
-N_opt                   = 2500; % Number of steps to perform optimization
-printFlag               = false;
-codegenFlag             = false;
+N_opt                   = 6000; % Number of steps to perform optimization
+printFlag               = true;
+codegenFlag             = true;
 
 z0                      = [W(N_start,1:2)'; %12;0
                            0.9; 0.1; sqrt(1-0.9^2-0.1^2)];
@@ -78,8 +78,8 @@ if codegenFlag
     codegen normconstr -args {z0, parameters.rd_meas} -lang:c++
 end
 
-% Check Derivatives (v2024 only)
-if ~isMATLABReleaseOlderThan("R2024a")
+% Check Derivatives (v2024 only, Opt. toolbox required)
+if ~isMATLABReleaseOlderThan("R2024a") && any(strcmp('Optimization Toolbox', {ver().Name}))
     if options.SpecifyObjectiveGradient
         assert(checkGradients(@(z)Wind_cost(z, parameters), randn(5,1), options, Display="off", Tolerance=1e-4))
     end
@@ -107,7 +107,7 @@ for i = int32(N_start):int32(N_end)
     zl_vec(i-N_start+1,:)   = zstar(3:5)';
     parameters.zold         = zstar;
     if printFlag && mod(i,10) == 0
-        fprintf("Iteration %4d done, EstWind is [%7.4f %7.4f], (norm %4.3f), iter: %3d, feval: %3d, exit:%2d \n", ...
+        fprintf("Step %4d done, EstWind is [%7.4f %7.4f], (norm %4.3f), iter: %3d, feval: %3d, exit:%2d \n", ...
             i, zstar(1), zstar(2), norm(zstar(3:5)), output.iterations, output.funcCount, exitflag);
     end     
 end

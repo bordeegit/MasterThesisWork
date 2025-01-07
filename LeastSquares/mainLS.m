@@ -8,7 +8,6 @@ set(groot,'DefaultAxesTickLabelInterpreter', 'Latex');
 set(groot,'DefaultLegendInterpreter', 'Latex');
 
 %% Load Flight Data & Signals Convertion
-% Additionally, in TL, get L_dot
 
 % load FlightData\Standard_Step.mat
 % SoftKite_TL
@@ -100,7 +99,6 @@ sgtitle('$\mathbf{|\vec{W}_{e,r}|}$')
 approx_validity = vecnorm(W_er_norm_vec - W_er_norm_real);
 fprintf("approx_validity: %.3f  %.3f\n",approx_validity);
 
-% The best one can be found with min(vecnorm(W_er_norm_vec - W_er_norm_real))
 % Overall, the best choice seems to be the traction
 
 
@@ -117,12 +115,14 @@ l = pos./vecnorm(pos,2,2); % kite position versor
 
 blockSize = 4; % Size of the block/window 
 initStep = 100; % Starting point, includes a left-truncation
-maxStep = 25000; % Shouldn't exceed length(l)
+maxStep = 6000; % Ending point
+assert(maxStep <= length(l), "maxStep shouldn't exceed %d", length(l))
 noZ = 1;        % Remove the computation of Wz (1 = yes, 0 = no)
 
 %[W_est, iSequence] = blockLS(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ);
-
+tic
 [W_est, iSequence] = slidingLS(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ);
+toc
 
 % Smoothing 
 W_est_filt = smoothdata(W_est, "movmedian", [500 0], "omitnan"); % Causale
@@ -138,28 +138,31 @@ disp(['For X, Estimated Mean is ' num2str(mean(W_est_filt(:,1), "omitnan"))...
 disp(['For Y, Estimated Mean is ' num2str(mean(W_est_filt(:,2), "omitnan"))...
       ' and real mean is ' num2str(mean(W(1:maxStep,2)))])
 
-
+load estdata.mat
 % Plot Results
+timeX = 0:T_s:(maxStep-1)*T_s;
 if ~noZ n_subpl = 3; else n_subpl = 2; end
 figure, grid on, hold on, sgtitle("Estimation Results")
 subplot(n_subpl,1,1), grid on, hold on,
-plot(0:T_s:(maxStep-1)*T_s,W_est(:,1), 'Color', [0.565 0.808 0.98 0.1]);
-plot(0:T_s:(maxStep-1)*T_s,W_est_filt(:,1), 'Color', [0 0.4470 0.7410], 'LineWidth', 2);
-plot(0:T_s:(maxStep-1)*T_s,W(1:maxStep,1),'--', 'Color', [0.8500 0.3250 0.0980], 'LineWidth', 2), %xlim([1 6000]), ylim([-1 15]), hold off
-legend('Estimated $W_x$', 'Filtered $W_x$', 'Actual $W_x$'), ylim([-3 7])
+plot(timeX,W_est(:,1), 'Color', [0.565 0.808 0.98 0.2]);
+plot(timeX,W_est_filt(:,1), 'Color', [0 0.4470 0.7410], 'LineWidth', 2);
+plot(timeX,W(1:maxStep,1),'--', 'Color', [0.8500 0.3250 0.0980], 'LineWidth', 2), %xlim([1 6000]), ylim([-1 15]), hold off
+plot(timeX,W0_vec(:,1), 'LineWidth', 2), %xlim([1 6000]), ylim([-1 15]), hold off
+legend('Estimated $W_x$', 'Filtered $W_x$', 'Actual $W_x$', 'Opt $W_x$'), ylim([-3 7])
 ylabel('Wind Speed (m/s)'), xlabel('Time (s)')
 subplot(n_subpl,1,2), grid on, hold on
-plot(0:T_s:(maxStep-1)*T_s,W_est(:,2), 'Color', [0.565 0.808 0.98 0.1]);
-plot(0:T_s:(maxStep-1)*T_s,W_est_filt(:,2), 'Color', [0 0.4470 0.7410], 'LineWidth', 2);
-plot(0:T_s:(maxStep-1)*T_s,W(1:maxStep,2),'--', 'Color', [0.8500 0.3250 0.0980], 'LineWidth', 2), %xlim([1 6000]), ylim([-1 5]), hold off
-legend('Estimated $W_y$', 'Filtered $W_y$', 'Actual $W_y$'), ylim([-3 7])
+plot(timeX,W_est(:,2), 'Color', [0.565 0.808 0.98 0.2]);
+plot(timeX,W_est_filt(:,2), 'Color', [0 0.4470 0.7410], 'LineWidth', 2);
+plot(timeX,W(1:maxStep,2),'--', 'Color', [0.8500 0.3250 0.0980], 'LineWidth', 2), %xlim([1 6000]), ylim([-1 5]), hold off
+plot(timeX,W0_vec(:,2), 'LineWidth', 2), %xlim([1 6000]), ylim([-1 15]), hold off
+legend('Estimated $W_y$', 'Filtered $W_y$', 'Actual $W_y$', 'Opt $W_y$'), ylim([-3 7])
 ylabel('Wind Speed (m/s)'), xlabel('Time (s)') 
 if(~noZ)
 subplot(n_subpl,1,3), grid on, hold on,
 grid on, hold on, ylim([-5 10])
-plot(0:T_s:(maxStep-1)*T_s,W_est(:,3), 'Color', [0.565 0.808 0.98 0.1]);
-plot(0:T_s:(maxStep-1)*T_s,W_est_filt(:,3), 'Color', [0 0.4470 0.7410], 'LineWidth', 2);
-plot(0:T_s:(maxStep-1)*T_s,W(1:maxStep,3),'--', 'Color', [0.8500 0.3250 0.0980], 'LineWidth', 2), %xlim([1 6000]), ylim([-1 15]), hold off
+plot(timeX,W_est(:,3), 'Color', [0.565 0.808 0.98 0.1]);
+plot(timeX,W_est_filt(:,3), 'Color', [0 0.4470 0.7410], 'LineWidth', 2);
+plot(timeX,W(1:maxStep,3),'--', 'Color', [0.8500 0.3250 0.0980], 'LineWidth', 2), %xlim([1 6000]), ylim([-1 15]), hold off
 legend('Estimated $W_z$', 'Filtered $W_z$', 'Actual $W_z$'), ylim([-3 7])
 ylabel('Wind Speed (m/s)'), xlabel('Time (s)')
 end 
@@ -172,6 +175,13 @@ error(error(:,1) < -20, 1) = -20;
 error(error(:,2) > 20, 2) = 20;
 error(error(:,2) < -20, 2) = -20;  
 printTraj(pos, error , initStep, maxStep, "hot")
+
+% Absolute Wind 
+W_est_norm = vecnorm(W_est_filt')';
+W_norm = vecnorm(W(1:maxStep,:)')';
+figure,  hold on, grid on
+plot(timeX, W_est_norm), plot(timeX, W_norm, '--'),
+legend('$|W_{est}|$', '$|W|$'), ylabel('Wind Speed (m/s)'), xlabel('Time (s)') 
 
 %% Hyperparameter optimization?
 

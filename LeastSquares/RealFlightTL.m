@@ -26,7 +26,7 @@ L_dot = zeros(N,1);
 
 
 
-% Filter
+% Filter for Cable Force and Wind 
 s=tf('s');
 wb_filt=1;  % Hz
 filt=1/(1+s/(wb_filt*2*pi));
@@ -58,6 +58,7 @@ posDotDot = [0 0 0; diff(posDot)/T_s];
 
 %% Wind
 
+% Needs to be rotated, according to Log Analysis
 W_unf = [Wind_speed.*cos(pi/2 - Wind_dir),...
          Wind_speed.*sin(pi/2 - Wind_dir).*(1+0.1*sin(theta)), ...
          zeros(N,1)];
@@ -80,6 +81,6 @@ Cd_sim = parameters.Cd*ones(N,1);
 
 %% Polish
 
-clear W_unf
-clear -regexp ^Load_cell
+clearvars -except DataFlag r N T_s parameters L_dot pos posDot posDotDot W F_T_norm Cl_sim Cd_sim
+
 
