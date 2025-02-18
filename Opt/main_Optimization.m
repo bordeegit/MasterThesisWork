@@ -33,7 +33,7 @@ parameters.F_T_norm     = F_T_norm(1,end);
 N_start                 = 1;
 N_opt                   = 6000; % Number of steps to perform optimization
 printFlag               = true;
-codegenFlag             = true;
+codegenFlag             = false;
 
 z0                      = [W(N_start,1:2)'; %12;0
                            0.9; 0.1; sqrt(1-0.9^2-0.1^2)];
@@ -112,6 +112,8 @@ for i = int32(N_start):int32(N_end)
     end     
 end
 toc
+
+%W0_vec = smoothdata(W0_vec, "movmedian", [500 0], "omitnan"); % Causale
 
 RMSE = rmse(W(N_start:N_end,:), W0_vec(:,:));
 fprintf("RMSE: %f, %f, %f, 2-norm: %f\n", RMSE, norm(RMSE));

@@ -53,7 +53,7 @@ posDot(i,:) = R_LG * (r*[theta_dot(i); cos(theta(i))*phi_dot(i); 0]);
 end
 
 % We don't need accelerationd, no need for posDotDot
-posDotDot = [0 0 0; diff(posDot)/T_s]; 
+% posDotDot = [0 0 0; diff(posDot)/T_s]; 
 
 
 %% Wind
@@ -81,6 +81,6 @@ Cd_sim = parameters.Cd*ones(N,1);
 
 %% Polish
 
-clearvars -except DataFlag r N T_s parameters L_dot pos posDot posDotDot W F_T_norm Cl_sim Cd_sim
+%clearvars -except DataFlag r N T_s parameters L_dot pos posDot posDotDot W F_T_norm Cl_sim Cd_sim
 
 
