@@ -1,4 +1,4 @@
-function [W_est_full, iSequence] = slidingLS(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ)
+function W_est_full = slidingLS(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ)
 %SLIDINGLS Solves the Estimation problem with a 'sliding window' approach 
 %   At each step, computes the wind solving a least square problem
 %   considering the previous blockSize measurement
@@ -15,6 +15,7 @@ for i = iSequence
         A(j,:) = l(i-blockSize+j,1:3-noZ); 
         B(j) = W_er_norm(i-blockSize+j)+L_dot(i-blockSize+j);
     end
+    %W_est_vals(i,:) = lsqr(A,B,tol,maxIter)';
     evalc("W_est_vals(i,:) = lsqr(A,B,tol,maxIter)';");
     % Tried to use lsqminnorm, the same as pinv(A)*B, get same results to 10e-8
 end

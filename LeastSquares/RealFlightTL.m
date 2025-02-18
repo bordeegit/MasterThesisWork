@@ -6,6 +6,8 @@ load(which('Log_12m2_fix.mat'));
 % Kite_phi/Kite_theta and phi/theta are basically the same, just 2
 % different acquisitions, first from the ground, second from IMU (smoother)
 
+% T_s = 0.02, acquisition lasted 500s -> 25000 steps + 1 @t=0
+
 DataFlag = "RealFlight";
 r = Kite_param.length;
 N = length(theta);
@@ -81,6 +83,7 @@ Cd_sim = parameters.Cd*ones(N,1);
 
 %% Polish
 
-%clearvars -except DataFlag r N T_s parameters L_dot pos posDot posDotDot W F_T_norm Cl_sim Cd_sim
+clearvars -except DataFlag r N T_s parameters L_dot pos posDot posDotDot...
+    W F_T_norm Cl_sim Cd_sim phi theta phi_dot
 
 
