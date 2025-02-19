@@ -23,13 +23,13 @@ AeroCoeffMode = "mean";     % mean or real (same in RealFlight)
 
 ApproxIndex = 1;            % Approx of |W_e,r|    1: traction  2: speed
 
-blockSize = 6;              % Size of the block/window 
+blockSize = 4;              % Size of the block/window 
 initStep = 100;             % Starting point, includes a left-truncation
 maxStep = 6000;             % Ending point (consider T_s=0.02, 6000 steps are 120s)
 
 noZ = 1;                    % Remove the computation of Wz (1 = yes, 0 = no)
 
-PrintErrorScaling = false; % Print the plot of the original and scaled error 
+PrintErrorScaling = false;  % Print the plot of the original and scaled error (true/false)
 
 %% Computation of Equivalent Kite Aerodynamic Efficiency 
 
@@ -107,8 +107,9 @@ CWF_TH_LOW = -0.5;
 [W_est_CWF, CWF_mask] = CWF_Selection(W_est, phi_dot, CWF_TH_UPP, CWF_TH_LOW);
 
 % c) CWF Estimation, sliding only on blocks where all elements are valid 
+tic
 W_CWF = slidingLS_CWF(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ,CWF_mask);
-
+toc
 
 % d) Estimation using Optimization appraoch (W0_vec)
 load estdata.mat
@@ -128,63 +129,17 @@ Names_matrices = {'Est_filt', strcat('Est_CWF_',num2str(CWF_TH_UPP)), 'CWF', 'OP
 PerformanceEvaluation(W_matrices, Names_matrices);
 
 
-% Plot Results TODO: move this in a function, maybe loop over W_matrices
 timeX = 0:T_s:(maxStep-1)*T_s;
-if ~noZ n_subpl = 3; else n_subpl = 2; end
-figure, grid on, hold on, %sgtitle("Estimation Results")
-subplot(n_subpl,1,1), grid on, hold on,
-plot(timeX,W_est(:,1), 'Color', [0.565 0.808 0.98 0.2]);
-plot(timeX,W_est_filt(:,1), 'Color', [0 0.4470 0.7410], 'LineWidth', 2);
-plot(timeX,W_est_CWF(:,1), 'LineWidth', 2);
-plot(timeX,W_CWF(:,1), 'LineWidth', 2);
-plot(timeX,W_real(:,1),'--', 'Color', [0.8500 0.3250 0.0980], 'LineWidth', 2), %xlim([0 60]), %ylim([-1 15]), hold off
-plot(timeX,W_OPT(:,1), 'LineWidth', 2), %xlim([1 6000]), ylim([-1 15]), hold off
-legend('Estimated $W_x$', 'Filtered $W_x$', 'Crosswind $W_x$', 'Crosswind Full $W_x$', 'Actual $W_x$', 'Opt $W_x$'), ylim([-3 7])
-ylabel('Wind Speed (m/s)'), xlabel('Time (s)'), box on
-subplot(n_subpl,1,2), grid on, hold on
-plot(timeX,W_est(:,2), 'Color', [0.565 0.808 0.98 0.2]);
-plot(timeX,W_est_filt(:,2), 'Color', [0 0.4470 0.7410], 'LineWidth', 2);
-plot(timeX,W_est_CWF(:,2), 'LineWidth', 2);
-plot(timeX,W_CWF(:,2), 'LineWidth', 2);
-plot(timeX,W_real(:,2),'--', 'Color', [0.8500 0.3250 0.0980], 'LineWidth', 2), %xlim([1 60]), %ylim([-1 5]), hold off
-plot(timeX,W_OPT(:,2), 'LineWidth', 2), %xlim([1 6000]), ylim([-1 15]), hold off
-legend('Estimated $W_y$', 'Filtered $W_y$', 'Crosswind $W_y$', 'Crosswind Full $W_x$', 'Actual $W_y$', 'Opt $W_y$'), ylim([-3 7])
-ylabel('Wind Speed (m/s)'), xlabel('Time (s)'), box on
-if(~noZ)
-subplot(n_subpl,1,3), grid on, hold on,
-grid on, hold on, ylim([-5 10])
-plot(timeX,W_est(:,3), 'Color', [0.565 0.808 0.98 0.1]);
-plot(timeX,W_est_filt(:,3), 'Color', [0 0.4470 0.7410], 'LineWidth', 2);
-plot(timeX,W_real(:,3),'--', 'Color', [0.8500 0.3250 0.0980], 'LineWidth', 2), %xlim([1 6000]), ylim([-1 15]), hold off
-legend('Estimated $W_z$', 'Filtered $W_z$', 'Actual $W_z$'), ylim([-3 7])
-ylabel('Wind Speed (m/s)'), xlabel('Time (s)')
-end 
-linkaxes([subplot(n_subpl,1,1), subplot(n_subpl,1,2)], 'x');  % Link both x and y axes
+windData = createWindData(timeX, W_est, W_est_filt, W_est_CWF, W_CWF, W_OPT, W_real);
+plotWindEstimation(windData, noZ);
 
-%exportgraphics(gca,'test2.pdf','ContentType','vector')
 
-% Visualization of zones where spikes accour 
+% Visualization of zones where spikes accour, scaled 
 error = W_real - W_est;
 error_scaled = errorScaling(error, 'log', PrintErrorScaling);
 printTraj(pos, error_scaled , initStep, maxStep, "hot")
 
-% Absolute Wind magnitude
-W_est_filt_norm = vecnorm(W_est_filt')';
-W_real_norm = vecnorm(W_real')';
-W_CWF_norm = vecnorm(W_CWF')';
-W_OPT_norm = vecnorm(W_OPT')';
-figure,  hold on, grid on
-plot(timeX, W_est_filt_norm), plot(timeX, W_OPT_norm), plot(timeX, W_CWF_norm), plot(timeX, W_real_norm, '--'), 
-legend('$|W_{filt}|$',  '$|W_{OPT}|$', '$|W_{CWF}|$', '$|W_{real}|$'), ylabel('Wind Speed (m/s)'), xlabel('Time (s)')
-
-% Absolute Wind direction  
-dir_W_est_filt = atan2d(W_est_filt(:,2),W_est_filt(:,1));
-dir_W = atan2d(W_real(:,2),W_real(:,1));
-dir_W_CWF_full = atan2d(W_CWF(:,2),W_CWF(:,1));
-dir_W_OPT = atan2d(W_OPT(:,2),W_OPT(:,1));
-figure,  hold on, grid on
-plot(timeX, dir_W_est_filt), plot(timeX, dir_W_OPT), plot(timeX, dir_W_CWF_full), plot(timeX, dir_W, '--'), 
-legend('$\angle W_{filt}$',  '$\angle W_{OPT}$', '$\angle W_{CWF}$', '$\angle W_{real}$'), ylabel('Wind Direction (deg)'), xlabel('Time (s)')
+%exportgraphics(gca,'test2.pdf','ContentType','vector')
 
 %% Hyperparameter optimization?
 
