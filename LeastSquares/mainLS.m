@@ -112,7 +112,7 @@ W_CWF = slidingLS_CWF(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ,CWF_mask)
 toc
 
 % d) Estimation using Optimization appraoch (W0_vec)
-load estdata.mat
+load Opt_12m2.mat
 W_OPT = W0_vec;
 
 % e) Real wind measurement
