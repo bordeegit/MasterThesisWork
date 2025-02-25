@@ -1,5 +1,5 @@
 % Flags for Specific plotting
-%DataFlag = "SoftKite";
+DataFlag = "SoftKite";
 
 % Signals
 T_s = 0.01;
@@ -16,7 +16,7 @@ L_dot = statesdot.signals.values(:,5);     % Cable unwinding/winding speed
 %beta = alpha.signals.values - alpha_0;     % AoA variation
 th = pi/2 - theta.signals.values;
 thd = - thetadot.signals.values;
-phid = phidot.signals.values;
+phi_dot = phidot.signals.values;
 
 % Structural Parameters
 parameters.rho          = rho;

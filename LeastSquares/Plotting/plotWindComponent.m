@@ -2,7 +2,7 @@ function plotWindComponent(windData, component, label)
     grid on;
     hold on;
     
-    fields = fieldnames(windData.estimates);
+    fields = windData.plotFields;
     legendEntries = {};
     
     for i = 1:length(fields)
@@ -15,7 +15,7 @@ function plotWindComponent(windData, component, label)
     end
     
     legend(legendEntries, 'Interpreter', 'latex');
-    ylim([-3 7]);
+    ylim([-5 7]);
     ylabel('Wind Speed (m/s)');
     xlabel('Time (s)');
     hold off;

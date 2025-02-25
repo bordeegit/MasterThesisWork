@@ -1,4 +1,4 @@
-function windData = createWindData(timeX, estimate, filtered, crosswind, crosswindFull, optimal, real)
+function windData = createWindData(timeX, estimate, filtered, crosswind, crosswindFull, crosswindfilt, optimal, kalman, real)
     windData = struct();
     windData.time = timeX;
     windData.estimates = struct( ...
@@ -6,7 +6,9 @@ function windData = createWindData(timeX, estimate, filtered, crosswind, crosswi
         'estFilt', filtered, ...
         'estCWF', crosswind, ...
         'CWF', crosswindFull, ...
+        'CWFfilt', crosswindfilt, ...
         'OPT', optimal, ...
+        'KF', kalman, ...
         'real', real ...
     );
     
@@ -16,6 +18,11 @@ function windData = createWindData(timeX, estimate, filtered, crosswind, crosswi
     windData.plotProps.estFilt = struct('Color', [0 0.4470 0.7410], 'LineWidth', 2);
     windData.plotProps.estCWF = struct('Color', [0.9290 0.6940 0.1250], 'LineWidth', 2);
     windData.plotProps.CWF = struct('Color', [0.4660 0.6740 0.1880], 'LineWidth', 2);
+    windData.plotProps.CWFfilt = struct('Color', [0.6350 0.0780 0.1840], 'LineWidth', 2);
     windData.plotProps.OPT = struct('Color', [0.4940 0.1840 0.5560], 'LineWidth', 2);
+    windData.plotProps.KF = struct('Color', [1 0 1], 'LineWidth', 2);
     windData.plotProps.real = struct('Color', [0.8500 0.3250 0.0980], 'LineWidth', 2, 'LineStyle', '--');
+
+    % Select what fields to plot 
+    windData.plotFields = {'CWF', 'CWFfilt', 'OPT', 'KF', 'real'};
 end

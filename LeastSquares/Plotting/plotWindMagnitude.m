@@ -3,7 +3,7 @@ function plotWindMagnitude(windData)
     grid on;
     hold on;
     
-    fields = {'estFilt', 'CWF', 'OPT', 'real'};
+    fields = windData.plotFields;
     legendEntries = {};
     
     for i = 1:length(fields)

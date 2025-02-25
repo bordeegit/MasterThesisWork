@@ -9,13 +9,13 @@ set(groot,'DefaultLegendInterpreter', 'Latex');
 
 %% Load Flight Data & Signals Convertion
 
-% load FlightData\Standard_Step.mat
-% SoftKite_TL
+load FlightData\Standard_Step.mat
+SoftKite_TL
 
 % load FlightData\Kitemill_90S.mat
 % Kitemill_TL
 
-RealFlightTL
+%RealFlightTL
 
 %% Flags 
 
@@ -104,40 +104,61 @@ W_est_filt = smoothdata(W_est, "movmedian", filtWindow, "omitnan");
 % b) Filtering of Basic Estimation considering only crosswind flight (CWF)
 CWF_TH_UPP = 0.5;
 CWF_TH_LOW = -0.5;
+%CWF_mask elements are = 1 when turning (invalid points)
 [W_est_CWF, CWF_mask] = CWF_Selection(W_est, phi_dot, CWF_TH_UPP, CWF_TH_LOW);
 
 % c) CWF Estimation, sliding only on blocks where all elements are valid 
+%blockSize = 12;   
 tic
 W_CWF = slidingLS_CWF(W_er_norm,l,L_dot,blockSize,initStep,maxStep,noZ,CWF_mask);
 toc
 
 % d) Estimation using Optimization appraoch (W0_vec)
-load Opt_12m2.mat
-W_OPT = W0_vec;
+if DataFlag == "RealFlight"
+    load Opt_12m2.mat
+    W_OPT = W0_vec;
+else 
+    W_OPT = nan(size(W_CWF));
+end
 
 % e) Real wind measurement
 W_real = W(2:maxStep+1,:);
 
+% f) Moving median on CWF, keeping still when NaN
+W_CWF_filt = smoothdata(W_CWF, "movmedian", [100 0], "omitnan");
+% Example parameters
+% window_size = 5;      % Size of moving window
+% prev_weight = 0.7;    % Weight for previous filtered value (0.7 = 70% previous, 30% new)
+% 
+% W_CWF_filt(:,1) = weightedCasualFilter(W_CWF(:,1), window_size, prev_weight);
+% W_CWF_filt(:,2) = weightedCasualFilter(W_CWF(:,2), window_size, prev_weight);
+% W_CWF_filt(:,3) = weightedCasualFilter(W_CWF(:,3), window_size, prev_weight);
+
+% g) KF on measurements
+tic
+[W_KF] = KFestimateWind(W_er_norm, l, L_dot, T_s, maxStep, CWF_mask);
+toc
+
 clearvars W W0_vec
-W_matrices = {W_est_filt, W_est_CWF, W_CWF, W_OPT, W_real}; 
-Names_matrices = {'Est_filt', strcat('Est_CWF_',num2str(CWF_TH_UPP)), 'CWF', 'OPT', 'Real'};
+W_matrices = {W_est_filt, W_est_CWF, W_CWF, W_CWF_filt, W_OPT, W_KF, W_real}; 
+Names_matrices = {'Est_filt', strcat('Est_CWF_',num2str(CWF_TH_UPP)), 'CWF', 'CWF_filt', 'OPT', 'KF', 'Real'};
 
 
-%% Performance Evalation or Plot results 
+%% Performance Evalation and Plot results 
 
 % Performance Factors wrt real wind (note: at ground)
 PerformanceEvaluation(W_matrices, Names_matrices);
 
 
 timeX = 0:T_s:(maxStep-1)*T_s;
-windData = createWindData(timeX, W_est, W_est_filt, W_est_CWF, W_CWF, W_OPT, W_real);
+windData = createWindData(timeX, W_est, W_est_filt, W_est_CWF, W_CWF, W_CWF_filt, W_OPT, W_KF, W_real);
 plotWindEstimation(windData, noZ);
 
 
 % Visualization of zones where spikes accour, scaled 
 error = W_real - W_est;
 error_scaled = errorScaling(error, 'log', PrintErrorScaling);
-printTraj(pos, error_scaled , initStep, maxStep, "hot")
+printTrajNaN(pos, error_scaled , initStep, maxStep, "hot", CWF_mask)
 
 %exportgraphics(gca,'test2.pdf','ContentType','vector')
 

@@ -84,6 +84,6 @@ Cd_sim = parameters.Cd*ones(N,1);
 %% Polish
 
 clearvars -except DataFlag r N T_s parameters L_dot pos posDot posDotDot...
-    W F_T_norm Cl_sim Cd_sim phi theta phi_dot
+    W F_T_norm Cl_sim Cd_sim phi theta phi_dot theta_dot
 
 
