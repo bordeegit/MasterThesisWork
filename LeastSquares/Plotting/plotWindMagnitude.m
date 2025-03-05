@@ -1,5 +1,11 @@
-function plotWindMagnitude(windData)
-    figure('Name', 'Wind Magnitude');
+function plotWindMagnitude(windData, tabgroup)
+    if isnumeric(tabgroup)
+        figure('Name', 'Wind Magnitude');
+    else 
+        tab = uitab(tabgroup, 'Title', 'Wind Magnitude');
+        axes('Parent', tab);
+    end
+    
     grid on;
     hold on;
     

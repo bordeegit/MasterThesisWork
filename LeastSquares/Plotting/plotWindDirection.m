@@ -1,5 +1,10 @@
-function plotWindDirection(windData)
-    figure('Name', 'Wind Direction');
+function plotWindDirection(windData, tabgroup)
+    if isnumeric(tabgroup)
+        figure('Name', 'Wind Direction');
+    else 
+        tab = uitab(tabgroup, 'Title', 'Wind Direction');
+        axes('Parent', tab);
+    end
     grid on;
     hold on;
     

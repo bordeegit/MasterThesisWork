@@ -1,5 +1,5 @@
 function printTrajNaN(pos, posDot, N_start, N_end, color, mask)
-    figure;
+    %figure;
     grid on; hold on;
     
     % Determine colormap and colorbar label

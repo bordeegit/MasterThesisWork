@@ -19,7 +19,7 @@ set(groot,'DefaultLegendInterpreter', 'Latex');
 
 % SoftKite_TL
 %Kitemill_TL
-RealFlightTL
+RealFlight_TL
 
 % Size Initialization for codegen
 parameters.r_meas       = pos(1,:)';

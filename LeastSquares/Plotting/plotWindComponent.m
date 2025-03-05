@@ -15,7 +15,7 @@ function plotWindComponent(windData, component, label)
     end
     
     legend(legendEntries, 'Interpreter', 'latex');
-    ylim([-5 7]);
+    %ylim([-5 7]);
     ylabel('Wind Speed (m/s)');
     xlabel('Time (s)');
     hold off;

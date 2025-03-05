@@ -1,8 +1,8 @@
-clear 
-close all 
+% clear 
+% close all 
 
-addpath(genpath(pwd));
-load(which('Log_12m2_fix.mat'));
+%addpath(genpath(pwd));
+%load(which('Log_12m2_fix.mat'));
 % Kite_phi/Kite_theta and phi/theta are basically the same, just 2
 % different acquisitions, first from the ground, second from IMU (smoother)
 

@@ -10,6 +10,7 @@ F_T_norm = out.logsout.get("F_winch").Values.Data;     % Tether Force Magnitude
 W = out.logsout.get("wind speed").Values.Data;                  % Absolute Wind (xyz)
 Cd_sim = out.logsout.get("CD").Values.Data;                % Cd at each point
 Cl_sim = out.logsout.get("CL").Values.Data;                % Cl at each point
+phi_dot = 100*ones(size(F_T_norm));
 
 % For LS approach  
 L_dot = vecnorm(out.logsout.get('xyhdot').Values.Data')'; % (taut) Cable unwinding/winding speed 
@@ -24,7 +25,7 @@ parameters.n_l          = 1;
 parameters.mk           = 54;
 parameters.mt_noL       = 0.74/100; % dyneema-sk99(3.5mm) weight is 0.74kg/100m
 parameters.g            = 9.81;
-parameters.Cd           = mean(Cd_sim);
-parameters.Cl           = mean(Cl_sim);
+parameters.Cd           = Cd_sim;
+parameters.Cl           = Cl_sim;
 
 T_s = 0.01;
