@@ -9,13 +9,13 @@ set(groot,'DefaultLegendInterpreter', 'Latex');
 
 %% Load Flight Data & Signals Convertion
 
-load FlightData\Standard_Step.mat
-SoftKite_TL
+% load FlightData\Standard_Step.mat
+% SoftKite_TL
 
 % load FlightData\Kitemill_90S.mat
 % Kitemill_TL
 
-%RealFlightTL
+RealFlightTL
 
 %% Flags 
 
